@@ -12,7 +12,6 @@ driver.o: driver.cpp
 clean:
 	rm -f driver
 	rm *.o
-	rm matrix/matrix.o
 
 run: driver
 	./driver
