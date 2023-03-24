@@ -3,6 +3,7 @@
 #define _THREAD_NODE_H
 
 #include <thread>
+#include <vector>
 #include <stdint.h>
 #include "mbox.h"
 
@@ -19,15 +20,20 @@ struct Message
 	uint16_t hCount;
 };
 
-class ThreadNode : public std::thread
+class ThreadNode
 {
 	public:
 		ThreadNode();
 		~ThreadNode();
 
+		uint16_t getID() const;
+		void thread_recv(void*);
+
 		void run();
 	private:
 		Message msg;
+		uint16_t ID;
+		std::vector<uint16_t> neighbors;
 		char buffer[MAX];
 };
 

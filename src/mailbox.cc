@@ -7,7 +7,9 @@
 #include <map>
 #include <queue>
 #include <mutex>
+#include <condition_variable>
 #include "mbox.h"
+
 
 
 class MailBox {
@@ -19,6 +21,7 @@ class MailBox {
 		typedef std::queue<item> mailbox_t;       	// defining a queue of mailboxes to be a type for simple annotation
 		std::map<uint16_t,mailbox_t> _mailboxes;  	// the queue of mailboxes mapped to an unsigned integer
 		std::map<uint16_t, std::mutex> _mtx;		// parallel map of locks to each mailbox ID
+		std::map<uint16_t, std::condition_variable> cvs;
 		std::mutex m;								// basic lock for code deletion
 		int ID;
 	public:
@@ -77,7 +80,8 @@ int MailBox::recv(uint16_t msgID, void *packet, int max){
 	int numBytes = 0;
 	
 	// critical section
-	_mtx[msgID].lock();
+	std::unique_lock<std::mutex> lck(_mtx[msgID]);
+	cvs[msgID].wait(lck, !mbox_empty(msgID));
 
 	// copy the message at msgID into the buffer and then pop()
 	// the message from the queue
