@@ -1,9 +1,13 @@
+
+#ifndef _THREAD_NODE_H
+#define _THREAD_NODE_H
+
 #include <thread>
 #include <stdint.h>
 #include "mbox.h"
 
-#ifndef _THREAD_NODE_H
-#define _THREAD_NODE_H
+#define MAX 1024
+
 
 struct Message
 {
@@ -20,8 +24,11 @@ class ThreadNode : public std::thread
 	public:
 		ThreadNode();
 		~ThreadNode();
+
+		void run();
 	private:
 		Message msg;
+		char buffer[MAX];
 };
 
 #endif

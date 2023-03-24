@@ -9,6 +9,7 @@
 #include <mutex>
 #include "mbox.h"
 
+
 class MailBox {
 		struct item {
 			int length;
