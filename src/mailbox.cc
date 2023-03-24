@@ -68,10 +68,13 @@ int MailBox::send(uint16_t msgID, const void *packet, int len){
 
 	// could be critical section
 	//mtx.lock();
-	std::cout << "Packet: " << (char *)packet << std::endl;
-	std::cout << "Item: " << msg.content << std::endl;
+	// std::cout << "Packet: " << (char *)packet << std::endl;
+	// std::cout << "Item: " << msg.content << std::endl;
+	std::lock_guard<std::mutex> lg(_mtx[msgID]);
 	_mailboxes[msgID].push(msg);
 	//mtx.unlock();
+
+	cvs[msgID].notify_one();
 
 	return numBytes;
 }
@@ -91,7 +94,6 @@ int MailBox::recv(uint16_t msgID, void *packet, int max){
 	
 	// get the size of the packet
 	numBytes = sizeof(packet);
-	_mtx[msgID].unlock();
 
 
 	return numBytes;
