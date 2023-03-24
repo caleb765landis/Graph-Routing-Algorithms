@@ -1,16 +1,19 @@
 CXX = g++ -pthread
 GFLAGS = -g -std=c++11
-OBJECTS = driver.o mailbox/mailbox.o threadgraph.o
-FILES = driver.cpp mailbox.cc ThreadGraph.cpp
+OBJECTS = driver.o mailbox.o threadgraph.o
+FILES = driver.cpp src/mailbox.cc src/ThreadGraph.cpp
 
-driver: driver.o mailbox/mailbox.o
+driver: driver.o mailbox.o
 	$(CXX) $(GFLAGS) -o driver $(OBJECTS)
 
-driver.o: driver.cpp threadgraph.o
+driver.o: driver.cpp threadgraph.o mailbox.o
 	$(CXX) $(GFLAGS) -c driver.cpp
 
-threadgraph.o: ThreadGraph.h ThreadGraph.cpp
-	$(CXX) $(GFLAGS) -c ThreadGraph.cpp
+threadgraph.o: src/ThreadGraph.h src/ThreadGraph.cpp
+	$(CXX) $(GFLAGS) -c src/ThreadGraph.cpp
+
+mailbox.o: src/mbox.h src/mailbox.cc
+	$(CXX) $(GFLAGS) -c src/mailbox.cc
 
 clean:
 	rm -f driver

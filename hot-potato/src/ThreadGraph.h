@@ -1,6 +1,7 @@
 #ifndef _THREAD_GRAPH_H
 #define _THREAD_GRAPH_H
 
+#include <iostream>
 #include <fstream>
 #include <string>
 #include <queue>

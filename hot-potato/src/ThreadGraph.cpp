@@ -1,5 +1,5 @@
 #include "ThreadGraph.h"
-
+#include <typeinfo>
 
 ThreadGraph::ThreadGraph(std::string filename)
 {
@@ -51,13 +51,13 @@ ThreadGraph::ThreadGraph(std::string filename)
 				// store the node ID number before the ":"
 				std::string nodeID = temp.substr(0, temp.find(':'));
 				// store everything after the ":" sign
-				std::string neighbors = temp.substr(temp.find(':') + 1, temp.find(':') - (temp.length() - 1) );
+				std::string nbors = temp.substr(temp.find(':') + 1, temp.find(':') - (temp.length() - 1) );
 
 				// loop through everything after the ":" sign neglecting commas "," and store in the graph as
 				// integers
-				for(int i = 0; i < neighbors.length(); i++){
-					if(neighbors.at(i) != ','){
-						this->graph[std::stoi(nodeID)].push_back(static_cast<uint16_t>(neighbors.at(i)));
+				for(int i = 0; i < nbors.length(); i++){
+					if(nbors.at(i) != ','){
+						this->graph[std::stoi(nodeID)].push_back(uint16_t(nbors.at(i) - '0'));
 					}
 				}
 			}
