@@ -83,8 +83,9 @@ int MailBox::recv(uint16_t msgID, void *packet, int max){
 	int numBytes = 0;
 	
 	// critical section
-	std::unique_lock<std::mutex> lck(_mtx[msgID]);
-	//cvs[msgID].wait(lck, !(_mailboxes[msgID].empty()));
+	std::unique_lock<std::mutex> lk(_mtx[msgID]);
+	bool empty = _mailboxes[msgID].empty();
+	cvs[msgID].wait(lk, [empty]{return !empty;});
 
 	// copy the message at msgID into the buffer and then pop()
 	// the message from the queue
