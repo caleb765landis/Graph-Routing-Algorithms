@@ -9,7 +9,6 @@
 
 #define MAX 1024
 
-
 struct Message
 {
 	/* data */
@@ -23,7 +22,7 @@ struct Message
 class ThreadNode
 {
 	public:
-		ThreadNode();
+		ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, Message msg);
 		~ThreadNode();
 
 		uint16_t getID() const;
