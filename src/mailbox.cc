@@ -85,7 +85,7 @@ int MailBox::recv(uint16_t msgID, void *packet, int max){
 	// critical section
 	std::unique_lock<std::mutex> lk(_mtx[msgID]);
 	bool empty = _mailboxes[msgID].empty();
-	cvs[msgID].wait(lk, [empty]{return !empty;});
+	//cvs[msgID].wait(lk, [empty]{return !empty;});
 
 	// copy the message at msgID into the buffer and then pop()
 	// the message from the queue
@@ -95,7 +95,6 @@ int MailBox::recv(uint16_t msgID, void *packet, int max){
 	
 	// get the size of the packet
 	numBytes = sizeof(packet);
-
 
 	return numBytes;
 }
