@@ -9,13 +9,15 @@
 #include <mutex>
 #include <condition_variable>
 #include "mbox.h"
+#include "MessagePacket.h"
 
 
 
 class MailBox {
 		struct item {
 			int length;
-			char *content;
+			// MessagePacket* content;
+			char* content;
 		};
 
 		typedef std::queue<item> mailbox_t;       	// defining a queue of mailboxes to be a type for simple annotation
@@ -63,12 +65,21 @@ bool MailBox::empty(uint16_t msgID){
 }
 
 int MailBox::send(uint16_t msgID, const void *packet, int len){
+	// item msg = {len, (MessagePacket *)packet};
 	item msg = {len, (char *)packet};
 	int numBytes = sizeof(msg);
 
+	//const MessagePacket * _packet = (MessagePacket*)packet;
+	//std::cout << "Packet: " << _packet -> getTransmittor() << std::endl;
+
+	//std::cout << "Packet: " << msg.content->getTransmittor() << std::endl;
+
+	//std::cout << msg.content->getTransmittor() << std::cout;
+	//std::cout << (MessagePacket*)packet->getTransmittor() << std::endl;
+
 	// could be critical section
 	//mtx.lock();
-	// std::cout << "Packet: " << (char *)packet << std::endl;
+	//std::cout << "Packet: " << (char *)packet << std::endl;
 	// std::cout << "Item: " << msg.content << std::endl;
 	std::lock_guard<std::mutex> lg(_mtx[msgID]);
 	_mailboxes[msgID].push(msg);
@@ -89,8 +100,16 @@ int MailBox::recv(uint16_t msgID, void *packet, int max){
 
 	// copy the message at msgID into the buffer and then pop()
 	// the message from the queue
-	strcpy((char*)packet, _mailboxes[msgID].front().content);
+	//strcpy((char*)packet, _mailboxes[msgID].front().content);
 	// packet = _mailboxes[msgID].front().content;
+
+	// std::cout << _mailboxes[msgID].front().content -> getTransmittor() << std::endl;
+
+	packet = _mailboxes[msgID].front().content;
+	MessagePacket* p = (MessagePacket*)packet;
+	std::cout << "Receive packet: " << p-> getTransmittor() << std::endl;
+	
+	
 	_mailboxes[msgID].pop();
 	
 	// get the size of the packet
