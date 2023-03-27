@@ -26,9 +26,9 @@ class ThreadNode
 		~ThreadNode();
 
 		uint16_t getID() const;
-		void thread_recv(void*);
 
 		void run();
+		void thread_recv(void*);
 	private:
 		Message msg;
 		uint16_t ID;
