@@ -61,10 +61,10 @@ int main(){
 	
 	char buffer[MAX];
 	char buffer2[MAX];
-	const char* msgStr = "hello, I am Michael";
+	// const char* msgStr = "hello, I am Michael";
 
-	mbox_send(1, msgStr, strlen(msgStr)+1);
-	int rbytes = mbox_recv(1, buffer, MAX);
+	// mbox_send(1, msgStr, strlen(msgStr)+1);
+	// int rbytes = mbox_recv(1, buffer, MAX);
 
 	MessagePacket msgPacket(0, 2, 2);
 
@@ -81,18 +81,14 @@ int main(){
 	// mbox_recv(2, rcvrPtr, MAX);
 	mbox_recv(2, buffer2, MAX);
 
-	//MessagePacket* p = (MessagePacket*)rcvrPtr;
-	MessagePacket* p = (MessagePacket*)buffer2;
+	rcvrPtr = (MessagePacket*)rcvrPtr;
+	rcvrPtr = (MessagePacket*)buffer2;
 
 	std::cout << "After sending:" << std::endl;
-	std::cout << p->getTransmittor() << std::endl;
-	std::cout << p->getReceiver() << std::endl;
-	std::cout << p->getSender() << std::endl;
-	std::cout << p->getDestination() << std::endl;
-	// std::cout << rcvrPtr -> getTransmittor() << std::endl;
-	// std::cout << rcvrPtr -> getReceiver() << std::endl;
-	// std::cout << rcvrPtr -> getSender() << std::endl;
-	// std::cout << rcvrPtr -> getDestination() << std::endl;
+	std::cout << rcvrPtr -> getTransmittor() << std::endl;
+	std::cout << rcvrPtr -> getReceiver() << std::endl;
+	std::cout << rcvrPtr -> getSender() << std::endl;
+	std::cout << rcvrPtr -> getDestination() << std::endl;
 
 
 	// std::thread a(mbox_send, 2, msgStr, strlen(msgStr));
@@ -101,7 +97,7 @@ int main(){
 	// a.join();
 	// b.join();
 
-	std::cout << "Buffer: " << buffer << " - Bytes - " << sizeof(msgStr) << std::endl;
+	//std::cout << "Buffer: " << buffer << " - Bytes - " << sizeof(msgStr) << std::endl;
 
 	// Message msg = {1, 2, 1, 2, 0, "Test"};
 	// const Message* msgPtr = &msg;

@@ -69,8 +69,8 @@ int MailBox::send(uint16_t msgID, const void *packet, int len){
 	item msg = {len, (char *)packet};
 	int numBytes = sizeof(msg);
 
-	//const MessagePacket * _packet = (MessagePacket*)packet;
-	//std::cout << "Packet: " << _packet -> getTransmittor() << std::endl;
+	const MessagePacket * _packet = (MessagePacket*)packet;
+	std::cout << "Packet: " << _packet -> getTransmittor() << std::endl;
 
 	//std::cout << "Packet: " << msg.content->getTransmittor() << std::endl;
 
@@ -129,12 +129,10 @@ bool mbox_avail(uint16_t msgID)
 	return true;
 }
 
-
 int  mbox_send(uint16_t msgID, const void *packet, int len)
 {
 	return mailbox.send(msgID, packet, len);
 }
-
 
 int  mbox_recv(uint16_t msgID, void *packet, int max)
 {
