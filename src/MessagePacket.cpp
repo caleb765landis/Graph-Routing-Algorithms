@@ -15,36 +15,34 @@ MessagePacket::~MessagePacket()
 {}
 
 void MessagePacket::setTransmittor(uint16_t trsmtr)
-{}
+{_transmittor = trsmtr;}
 
 uint16_t MessagePacket::getTransmittor() const
 {return _transmittor;}
 
 uint16_t MessagePacket::getTransmittor()
-{
-    return _transmittor;
-}
+{return _transmittor;}
 
 void MessagePacket::setReceiver(uint16_t rcvr)
-{}
+{_receiver = rcvr;}
 
 uint16_t MessagePacket::getReceiver() const
 {return _receiver;}
 
 void MessagePacket::setSender(uint16_t sndr)
-{}
+{_sender = sndr;}
 
 uint16_t MessagePacket::getSender() const
 {return _sender;}
 
 void MessagePacket::setDestination(uint16_t dest)
-{}
+{_destination = dest;}
 
 uint16_t MessagePacket::getDestination() const
 {return _destination;}
 
 void MessagePacket::incHopCount()
-{}
+{_hopCount++;}
 
 uint16_t MessagePacket::getHopCount() const
 {return _hopCount;}
@@ -56,7 +54,12 @@ void MessagePacket::timeStart()
 }
 
 void MessagePacket::timeStop()
-{}
+{
+    timeInterval.stop();
+    _finalTime = timeInterval.end_time;
+}
 
-double MessagePacket::getFinalTimeInterval() const
-{}
+double MessagePacket::getFinalTimeInterval()
+{
+    return timeInterval.GetInterval();
+}

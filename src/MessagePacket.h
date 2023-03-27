@@ -38,7 +38,7 @@ public:
 
     // stops timer if finalTime is 0. returns total time message was in network
     // difference of stop time and start time
-    double getFinalTimeInterval() const; 
+    double getFinalTimeInterval(); 
 
 private:
     uint16_t _transmittor; // threadnode that last sent the message
