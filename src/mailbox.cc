@@ -85,6 +85,9 @@ int MailBox::send(uint16_t msgID, const void *packet, int len){
 	_mailboxes[msgID].push(msg);
 	//mtx.unlock();
 
+	_packet = (MessagePacket*)_mailboxes[msgID].front().content;
+	std::cout << "Packet2: " << _packet->getTransmittor() << std::endl;
+
 	cvs[msgID].notify_one();
 
 	return numBytes;
@@ -105,9 +108,17 @@ int MailBox::recv(uint16_t msgID, void *packet, int max){
 
 	// std::cout << _mailboxes[msgID].front().content -> getTransmittor() << std::endl;
 
+	std::cout << "Packet Addr: " << packet << std::endl;
 	packet = _mailboxes[msgID].front().content;
+	std::cout << "Mailbox Packet Addr: " << packet << std::endl;
+
 	MessagePacket* p = (MessagePacket*)packet;
-	std::cout << "Receive packet: " << p-> getTransmittor() << std::endl;
+	std::cout << "Receive packet: " << std::endl;
+	std::cout << "P Addr: " << p << std::endl;
+	std::cout << p-> getTransmittor() << std::endl;
+	std::cout << p-> getReceiver() << std::endl;
+	std::cout << p-> getSender() << std::endl;
+	std::cout << p-> getDestination() << std::endl;
 	
 	
 	_mailboxes[msgID].pop();

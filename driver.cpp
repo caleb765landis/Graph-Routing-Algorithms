@@ -71,6 +71,9 @@ int main(){
 	const MessagePacket* msgPcktPtr = &msgPacket;
 	MessagePacket* rcvrPtr;
 
+	std::cout << "msgPacket Addr: " << &msgPacket << std::endl;
+	std::cout << "rcvrPtr Addr: " << rcvrPtr << std::endl;
+
 	std::cout << "Before sending:" << std::endl;
 	std::cout << msgPcktPtr->getTransmittor() << std::endl;
 	std::cout << msgPcktPtr->getReceiver() << std::endl;
@@ -78,13 +81,15 @@ int main(){
 	std::cout << msgPcktPtr->getDestination() << std::endl;
 
 	mbox_send(2, &msgPacket, sizeof(msgPacket));
-	// mbox_recv(2, rcvrPtr, MAX);
-	mbox_recv(2, buffer2, MAX);
 
-	rcvrPtr = (MessagePacket*)rcvrPtr;
-	rcvrPtr = (MessagePacket*)buffer2;
+	mbox_recv(2, rcvrPtr, MAX);
+	//mbox_recv(2, buffer2, MAX);
 
-	std::cout << "After sending:" << std::endl;
+	//rcvrPtr = (MessagePacket*)rcvrPtr;
+	//rcvrPtr = (MessagePacket*)buffer2;
+
+	std::cout << "After receiving:" << std::endl;
+	std::cout << "rcvrPtr Addr: " << rcvrPtr << std::endl;
 	std::cout << rcvrPtr -> getTransmittor() << std::endl;
 	std::cout << rcvrPtr -> getReceiver() << std::endl;
 	std::cout << rcvrPtr -> getSender() << std::endl;

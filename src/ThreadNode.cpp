@@ -1,6 +1,6 @@
 #include "ThreadNode.h"
 
-ThreadNode::ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, Message msg)
+ThreadNode::ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, MessagePacket msg)
 : ID(id), neighbors(neighbors), msg(msg)
 {}
 
