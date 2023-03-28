@@ -15,6 +15,8 @@ class MessagePacket
 public:
     // also sets hop count to 0, transmittor to sendr, and initializes startTime
     MessagePacket(uint16_t sendr, uint16_t dest, uint16_t rcvr);
+    MessagePacket(const MessagePacket& otherPacket);
+    MessagePacket();
     ~MessagePacket();
 
     void setTransmittor(uint16_t trsmtr);
@@ -32,13 +34,23 @@ public:
 
     void incHopCount();
     uint16_t getHopCount() const;
+    void setHopCount(uint16_t hpcount);
 
     void timeStart(); // sets start time to keep track of how long message is in network
     void timeStop(); // sets final time to how long since start time has passed
+    void setStartTime(timeval t);
+    timeval getStartTime() const;
+    void setFinalTime(timeval t);
+    timeval getFinalTime() const;
+
+    void setTimeInterval(TimeInterval t);
+    TimeInterval getTimeInterval() const;
 
     // stops timer if finalTime is 0. returns total time message was in network
     // difference of stop time and start time
     double getFinalTimeInterval(); 
+
+    MessagePacket operator=(const MessagePacket& other);
 
 private:
     uint16_t _transmittor; // threadnode that last sent the message
@@ -49,6 +61,8 @@ private:
     timeval _startTime; // time message was created. determines time spend in network
     timeval _finalTime; // time message reached final destination
     TimeInterval timeInterval; // Time interval object for keeping track of time
+
+    void copyMessagePacket(const MessagePacket& other);
 };
 
 #endif

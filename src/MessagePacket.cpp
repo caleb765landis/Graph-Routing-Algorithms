@@ -5,11 +5,19 @@ MessagePacket::MessagePacket(uint16_t sendr, uint16_t dest, uint16_t rcvr)
 {
     timeStart();
 
-    std::cout << getTransmittor() << std::endl;
-    std::cout << getReceiver() << std::endl;
-    std::cout << getSender() << std::endl;
-    std::cout << getDestination() << std::endl;
+    std::cout << "\nIN MESSAGE PACKET: " << getTransmittor() << std::endl;
+    std::cout << "Receiver: "<< getReceiver() << std::endl;
+    std::cout << "Sender: "<< getSender() << std::endl;
+    std::cout << "Destination: "<< getDestination() << std::endl;
 }
+
+MessagePacket::MessagePacket(const MessagePacket& otherPacket){
+    copyMessagePacket(otherPacket);
+}
+
+MessagePacket::MessagePacket()
+: _transmittor(0), _receiver(0), _sender(0), _destination(0), _hopCount(0)
+{}
 
 MessagePacket::~MessagePacket()
 {}
@@ -62,4 +70,46 @@ void MessagePacket::timeStop()
 double MessagePacket::getFinalTimeInterval()
 {
     return timeInterval.GetInterval();
+}
+
+void MessagePacket::setHopCount(uint16_t hpcount){
+    this->_hopCount = hpcount;
+}
+
+void MessagePacket::setStartTime(timeval t) {
+    this->_startTime = t;
+}
+timeval MessagePacket::getStartTime() const{
+    return this->_startTime;
+}
+
+void MessagePacket::setFinalTime(timeval t) {
+    this-> _finalTime = t;
+}
+timeval MessagePacket::getFinalTime() const{
+    return this->_finalTime;
+}
+
+void MessagePacket::setTimeInterval(TimeInterval t){
+    this->timeInterval = t;
+}
+TimeInterval MessagePacket::getTimeInterval() const{
+    return this->timeInterval;
+}
+
+void MessagePacket::copyMessagePacket(const MessagePacket& other){
+    setTransmittor(other.getTransmittor());
+    setReceiver(other.getReceiver());
+    setSender(other.getSender());
+    setDestination(other.getDestination());
+    setHopCount(other.getHopCount());
+    setStartTime(other.getStartTime());
+    setFinalTime(other.getFinalTime());
+    setTimeInterval(other.getTimeInterval());
+
+}
+
+MessagePacket MessagePacket::operator=(const MessagePacket& other){
+    copyMessagePacket(other);
+    return *this;
 }
