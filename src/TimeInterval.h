@@ -12,7 +12,12 @@ public:
         TimeInterval();
         void start();
         void stop();
+
+        timeval getStartTime() const;
+        timeval getEndTime() const;
         double GetInterval();
+
+        TimeInterval operator=(const TimeInterval& other);
 };
 
 #endif //!defined TimeInterval

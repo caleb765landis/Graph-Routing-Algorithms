@@ -21,3 +21,16 @@ double TimeInterval::GetInterval()
         return t;
 }
 
+timeval TimeInterval::getStartTime() const{
+        return this->start_time;
+}
+
+timeval TimeInterval::getEndTime() const{
+        return this->end_time;
+}
+
+TimeInterval TimeInterval::operator=(const TimeInterval& other){
+        this->start_time = other.getStartTime();
+        this->end_time = other.getEndTime();
+        return *this;
+}
