@@ -6,7 +6,9 @@
 #include <stdint.h>
 #include <sys/time.h>
 #include <cstddef>
+#include <sstream>
 #include <iostream>
+#include <string.h>
 #include "mbox.h"
 #include "TimeInterval.h"
 
@@ -19,6 +21,9 @@ public:
     MessagePacket(const MessagePacket& otherPacket);
     MessagePacket();
     ~MessagePacket();
+
+    std::string getDataStr();
+    void setData(std::string dataStr);
 
     void setTransmittor(uint16_t trsmtr);
     uint16_t getTransmittor() const;

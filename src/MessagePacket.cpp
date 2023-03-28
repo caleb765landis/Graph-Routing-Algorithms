@@ -27,6 +27,27 @@ MessagePacket::MessagePacket()
 MessagePacket::~MessagePacket()
 {}
 
+std::string MessagePacket::getDataStr()
+{
+    std::string dataStr = "";
+    std::string currentStr = "";
+    std::stringstream ss;
+    ss << _transmittor << ',' << _receiver << ',' << _sender << ',' << _destination << ',' << _hopCount << ',';
+    while (std::getline(ss, currentStr, ','))
+    {
+        dataStr += currentStr;
+    }
+
+    ss << (double)_startTime.tv_sec;
+    std::getline(ss, currentStr);
+    dataStr += currentStr;
+    
+
+    std::cout << "Data String: " << dataStr << '\n';
+
+    return dataStr;
+}
+
 void MessagePacket::setTransmittor(uint16_t trsmtr)
 {_transmittor = trsmtr;}
 

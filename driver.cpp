@@ -51,6 +51,8 @@ int main(){
 
 	MessagePacket msgPacket(0, 2, 2);
 
+	msgPacket.getDataStr();
+
 	// MessagePacket* msgPP = new MessagePacket(0,2,2);
 
 	const MessagePacket* msgPcktPtr = &msgPacket;
