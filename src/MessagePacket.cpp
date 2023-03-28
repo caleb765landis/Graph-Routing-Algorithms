@@ -11,6 +11,11 @@ MessagePacket::MessagePacket(uint16_t sendr, uint16_t dest, uint16_t rcvr)
     std::cout << "Destination: "<< getDestination() << std::endl;
 }
 
+MessagePacket::MessagePacket(std::string dataStr)
+{
+    // breaks dataStr up and loads it into each member variable
+}
+
 MessagePacket::MessagePacket(const MessagePacket& otherPacket){
     copyMessagePacket(otherPacket);
 }

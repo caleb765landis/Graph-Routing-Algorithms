@@ -15,6 +15,7 @@ class MessagePacket
 public:
     // also sets hop count to 0, transmittor to sendr, and initializes startTime
     MessagePacket(uint16_t sendr, uint16_t dest, uint16_t rcvr);
+    MessagePacket(std::string dataStr);
     MessagePacket(const MessagePacket& otherPacket);
     MessagePacket();
     ~MessagePacket();

@@ -51,10 +51,11 @@ int main(){
 
 	MessagePacket msgPacket(0, 2, 2);
 
-	MessagePacket* msgPP = new MessagePacket(0,2,2);
+	// MessagePacket* msgPP = new MessagePacket(0,2,2);
 
 	const MessagePacket* msgPcktPtr = &msgPacket;
-	MessagePacket* rcvrPtr = nullptr;
+	MessagePacket* rcvrPtr;
+	// MessagePacket* rcvrPtr = nullptr;
 
 	std::cout << "\nIN MAIN: \n";
 	std::cout << "msgPacket Addr: " << &msgPacket << std::endl;
@@ -68,19 +69,19 @@ int main(){
 
 	mbox_send(2, &msgPacket, sizeof(msgPacket));
 
-	mbox_recv(2, rcvrPtr, MAX);
-	//mbox_recv(2, buffer2, MAX);
+	//mbox_recv(2, rcvrPtr, MAX);
+	mbox_recv(2, buffer2, MAX);
 
 	//rcvrPtr = (MessagePacket*)rcvrPtr;
-	//rcvrPtr = (MessagePacket*)buffer2;
+	rcvrPtr = (MessagePacket*)buffer2;
 
 	std::cout << "\nIN MAIN: " << std::endl;
 	std::cout << "After receiving:" << std::endl;
 	std::cout << "rcvrPtr Addr: " << rcvrPtr << std::endl;
-	std::cout << rcvrPtr -> getTransmittor() << std::endl;
-	std::cout << rcvrPtr -> getReceiver() << std::endl;
-	std::cout << rcvrPtr -> getSender() << std::endl;
-	std::cout << rcvrPtr -> getDestination() << std::endl;
+	std::cout << ((MessagePacket*)rcvrPtr) -> getTransmittor() << std::endl;
+	std::cout << ((MessagePacket*)rcvrPtr) -> getReceiver() << std::endl;
+	std::cout << ((MessagePacket*)rcvrPtr) -> getSender() << std::endl;
+	std::cout << ((MessagePacket*)rcvrPtr) -> getDestination() << std::endl;
 
 
 	// std::thread a(mbox_send, 2, msgStr, strlen(msgStr));
@@ -97,7 +98,7 @@ int main(){
 	// int rbytes2 = mbox_recv(3, buffer, MAX);
 	// std::cout << "Buffer: " << buffer << " - Bytes - " << sizeof(msgStr) << std::endl;
 
-	delete msgPP;
+	//delete msgPP;
 
 	return 0;
 }

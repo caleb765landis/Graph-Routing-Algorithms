@@ -103,13 +103,13 @@ int MailBox::recv(uint16_t msgID, void *packet, int max){
 
 	// copy the message at msgID into the buffer and then pop()
 	// the message from the queue
-	//strcpy((char*)packet, _mailboxes[msgID].front().content);
+	strcpy((char*)packet, _mailboxes[msgID].front().content);
 	// packet = _mailboxes[msgID].front().content;
 
 	// std::cout << _mailboxes[msgID].front().content -> getTransmittor() << std::endl;
 
 	std::cout << "Packet Addr: " << packet << std::endl;
-	packet = _mailboxes[msgID].front().content;
+	//packet = _mailboxes[msgID].front().content;
 	std::cout << "Mailbox Packet Addr: " << packet << std::endl;
 
 	MessagePacket* p = (MessagePacket*)packet;
@@ -120,9 +120,19 @@ int MailBox::recv(uint16_t msgID, void *packet, int max){
 	std::cout << p-> getSender() << std::endl;
 	std::cout << p-> getDestination() << std::endl;
 	
+	MessagePacket mp = *(MessagePacket*)packet;
 	
 	_mailboxes[msgID].pop();
-	
+
+	packet = &mp;
+
+	std::cout << "Receive packet again: " << std::endl;
+	std::cout << "Packet addr: " << packet << std::endl;
+	std::cout << ((MessagePacket*)packet)->getTransmittor() << std::endl;
+	std::cout << ((MessagePacket*)packet)->getReceiver() << std::endl;
+	std::cout << ((MessagePacket*)packet)->getSender() << std::endl;
+	std::cout << ((MessagePacket*)packet)->getDestination() << std::endl;
+
 	// get the size of the packet
 	numBytes = sizeof(packet);
 
