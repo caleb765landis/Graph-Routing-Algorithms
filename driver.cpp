@@ -23,23 +23,6 @@ struct Message
 };
 
 int main(){
-	// Create graph from data file
-	ThreadGraph graph("graph/A10.dat");
-
-	std::cout << "Nodes: " << graph.getNumNodes() << std::endl;
-	std::cout << "Edges: " << graph.getNumEdges() << std::endl;
-
-	std::vector<uint16_t>::iterator it;
-
-	// get the neighbors/edges of node zero "0"
-	std::vector<uint16_t> temp = graph.getNeighbors(0);
-
-	// print node zero's neighbors/edges
-	std::cout << "0 --> ";
-	for(it = temp.begin(); it != temp.end(); it++){
-		std:: cout << *it << "-";
-	}
-	std::cout << std::endl;
 
 	/* ----------------------------------- // ----------------------------------- */
 
@@ -68,9 +51,12 @@ int main(){
 
 	MessagePacket msgPacket(0, 2, 2);
 
-	const MessagePacket* msgPcktPtr = &msgPacket;
-	MessagePacket* rcvrPtr;
+	MessagePacket* msgPP = new MessagePacket(0,2,2);
 
+	const MessagePacket* msgPcktPtr = &msgPacket;
+	MessagePacket* rcvrPtr = nullptr;
+
+	std::cout << "\nIN MAIN: \n";
 	std::cout << "msgPacket Addr: " << &msgPacket << std::endl;
 	std::cout << "rcvrPtr Addr: " << rcvrPtr << std::endl;
 
@@ -88,6 +74,7 @@ int main(){
 	//rcvrPtr = (MessagePacket*)rcvrPtr;
 	//rcvrPtr = (MessagePacket*)buffer2;
 
+	std::cout << "\nIN MAIN: " << std::endl;
 	std::cout << "After receiving:" << std::endl;
 	std::cout << "rcvrPtr Addr: " << rcvrPtr << std::endl;
 	std::cout << rcvrPtr -> getTransmittor() << std::endl;
@@ -109,6 +96,8 @@ int main(){
 	// mbox_send(3, msgPtr, sizeof(msg));
 	// int rbytes2 = mbox_recv(3, buffer, MAX);
 	// std::cout << "Buffer: " << buffer << " - Bytes - " << sizeof(msgStr) << std::endl;
+
+	delete msgPP;
 
 	return 0;
 }
