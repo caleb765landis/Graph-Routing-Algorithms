@@ -13,17 +13,43 @@
 
 int main(){
 
-	/* ----------------------------------- // ----------------------------------- */
 
 	// Read from graph data file and store in ThreadGraph
+	ThreadGraph graph("graph/A10.dat");
+
+	std::cout << "Nodes: " << graph.getNumNodes() << std::endl;
+	std::cout << "Edges: " << graph.getNumEdges() << std::endl;
+
+	std::vector<uint16_t>::iterator it;
+
+	// get the neighbors/edges of node zero "0"
+	std::vector<uint16_t> temp = graph.getNeighbors(0);
+
+	// print node zero's neighbors/edges
+	std::cout << "0 --> ";
+	for (it = temp.begin(); it != temp.end(); it++)
+	{
+		std::cout << *it << "-";
+	}
+	std::cout << std::endl;
+
+	/* ----------------------------------- // ----------------------------------- */
 
 	// Create N number of working threadnodes where N is number of nodes in graph
+	std::vector<ThreadNode> nodes;
+
+	ThreadNode n1(0, graph.getNeighbors(0), &nodes);
+	nodes.push_back(n1);
+
+	ThreadNode n2(1, graph.getNeighbors(1), &nodes);
+	nodes.push_back(n2);
+
+	n1.run();
+	n2.run();
+
 	// Each threadnode will have a thread that runs the threadnode's run method
 	// This method will begin the random message writing and passing
-
-	// ? Should there be a list of threadnodes so we can give each one acces to this list for message passing?
-	// ? The only problem I have with my implementation is figuring out how to get a reference to the other threadnodes
-
+	
 	// join threads once all processes have finished
 
 	// Go through each threadnode and report thread activity

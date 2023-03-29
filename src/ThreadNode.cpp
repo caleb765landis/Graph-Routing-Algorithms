@@ -1,17 +1,24 @@
 #include "ThreadNode.h"
 
-ThreadNode::ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, MessagePacket msg)
-: ID(id), neighbors(neighbors), msg(msg)
+ThreadNode::ThreadNode()
+{}
+
+ThreadNode::ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, std::vector<ThreadNode>* nodes)
+: _ID(id), _neighbors(neighbors), _nodes(nodes)
 {}
 
 ThreadNode::~ThreadNode()
 {}
 
 uint16_t ThreadNode::getID() const
-{return this->ID;}
+{return this->_ID;}
 
 void ThreadNode::run()
 {
+    std::cout << "Nodes 0: " << _nodes -> at(0).getID() << std::endl;
+    std::cout << "Nodes 1: " << _nodes -> at(1).getID() << std::endl;
+
+
     // Set message's sender to this node
     // Set final destination of message to random thread that is not current thread
     // Pick a random threadnode based on neighbors list
