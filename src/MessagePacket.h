@@ -44,8 +44,10 @@ public:
 
     void timeStart(); // sets start time to keep track of how long message is in network
     void timeStop(); // sets final time to how long since start time has passed
+
     void setStartTime(double t);
     double getStartTime() const;
+    
     void setFinalTime(double t);
     double getFinalTime() const;
 
