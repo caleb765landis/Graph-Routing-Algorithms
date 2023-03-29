@@ -23,6 +23,17 @@ void ThreadNode::run()
     // std::cout << "Nodes 0: " << _nodes -> at(0).getID() << std::endl;
     // std::cout << "Nodes 1: " << _nodes -> at(1).getID() << std::endl;
 
+    std::cout << "Node ID: " << this->getID() << std::endl;
+    std::cout << "Neighbors: ";
+    std::vector<uint16_t>::iterator it;
+    for (it = _neighbors.begin(); it != _neighbors.end(); it++)
+    {
+        std::cout << *it << "-";
+    }
+    std::cout << std::endl;
+
+    // seed random? probably don't want so it's easier to tell when everything's working
+
     // Set message's sender to this node
     uint16_t sender = this->getID();
 
@@ -35,6 +46,7 @@ void ThreadNode::run()
         if ((uint16_t)destination != this->getID())
         {
             keepGoing = false;
+            std::cout << "Random destination: " << destination << std::endl;
         }
     }
     // Pick a random threadnode based on neighbors list
@@ -53,15 +65,26 @@ void ThreadNode::run()
 
     // Get message packet data str
     std::string dataStr = _msg.getDataStr();
-    std::cout << "Node ID: " << this->getID() << std::endl;
-    std::cout << "DataStr in run: " << dataStr << std::endl << std::endl;
+    std::cout << "DataStr in run: " << dataStr << std::endl;
 
-    // Send message to that chosen threadnode's mailbox using _mailbox.mbox_send
-    // Call thread_recv on chosen threadnode
+    // Send message to that chosen threadnode receiver's mailbox using _mailbox.mbox_send
+    const char *dataPtr = dataStr.c_str();
+    mbox_send(receiver, dataPtr, strlen(dataPtr));
+
+    // Call thread_recv on chosen threadnode receiver
+    _nodes -> at(receiver).thread_recv();
 }
 
-void ThreadNode::thread_recv(void *)
+void ThreadNode::thread_recv()
 {
+    // Receive message from mailbox and store it in buffer
+    int rbytes = mbox_recv(this->getID(), _buffer, MAX);
+
+    std::cout << "In thread_recv for node " << this->getID() << ": " << std::endl;
+    std::cout << "Buffer: " << _buffer << " - Bytes - " << rbytes << std::endl << std::endl;
+
+    // Create a temporary MessagePacket
+
     // Increase threadnode's receive count
     // Increase message's hop count
     // Check if message's final destination is this thread

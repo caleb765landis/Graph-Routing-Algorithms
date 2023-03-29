@@ -21,7 +21,7 @@ class ThreadNode
 		uint16_t getID() const;
 
 		void run();
-		void thread_recv(void*);
+		void thread_recv();
 
 		void randSleep(double mean);
 		void randCool(double min, double max);

@@ -20,32 +20,45 @@ int main(){
 	std::cout << "Nodes: " << graph.getNumNodes() << std::endl;
 	std::cout << "Edges: " << graph.getNumEdges() << std::endl;
 
-	std::vector<uint16_t>::iterator it;
+	// std::vector<uint16_t>::iterator it;
 
-	// get the neighbors/edges of node zero "0"
-	std::vector<uint16_t> temp = graph.getNeighbors(0);
+	// // get the neighbors/edges of node zero "0"
+	// std::vector<uint16_t> temp = graph.getNeighbors(9);
 
-	// print node zero's neighbors/edges
-	std::cout << "0 --> ";
-	for (it = temp.begin(); it != temp.end(); it++)
-	{
-		std::cout << *it << "-";
-	}
-	std::cout << std::endl << std::endl;
+	// // print node zero's neighbors/edges
+	// std::cout << "0 --> ";
+	// for (it = temp.begin(); it != temp.end(); it++)
+	// {
+	// 	std::cout << *it << "-";
+	// }
+	// std::cout << std::endl << std::endl;
 
 	/* ----------------------------------- // ----------------------------------- */
 
 	// Create N number of working threadnodes where N is number of nodes in graph
 	std::vector<ThreadNode> nodes;
 
-	ThreadNode n1(0, graph.getNeighbors(0), &nodes);
-	nodes.push_back(n1);
+	for (int i = 0; i < graph.getNumNodes(); i++)
+	{
+		ThreadNode temp(i, graph.getNeighbors(i), &nodes);
+		nodes.push_back(temp);
+	}
 
-	ThreadNode n2(1, graph.getNeighbors(1), &nodes);
-	nodes.push_back(n2);
+	std::cout << "test" << std::endl;
 
-	n1.run();
-	n2.run();
+	for (int i = 0; i < graph.getNumNodes(); i++)
+	{
+		nodes[i].run();
+	}
+
+	// ThreadNode n1(0, graph.getNeighbors(0), &nodes);
+	// nodes.push_back(n1);
+
+	// ThreadNode n2(1, graph.getNeighbors(1), &nodes);
+	// nodes.push_back(n2);
+
+	// n1.run();
+	// n2.run();
 
 	// Each threadnode will have a thread that runs the threadnode's run method
 	// This method will begin the random message writing and passing
