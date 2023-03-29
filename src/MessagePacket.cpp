@@ -5,15 +5,15 @@ MessagePacket::MessagePacket(uint16_t sendr, uint16_t dest, uint16_t rcvr)
 {
     timeStart();
 
-    std::cout << "\nIN MESSAGE PACKET: " << getTransmittor() << std::endl;
-    std::cout << "Receiver: "<< getReceiver() << std::endl;
-    std::cout << "Sender: "<< getSender() << std::endl;
-    std::cout << "Destination: "<< getDestination() << std::endl;
+//     std::cout << "\nIN MESSAGE PACKET: " << getTransmittor() << std::endl;
+//     std::cout << "Receiver: "<< getReceiver() << std::endl;
+//     std::cout << "Sender: "<< getSender() << std::endl;
+//     std::cout << "Destination: "<< getDestination() << std::endl;
 }
 
 MessagePacket::MessagePacket(std::string dataStr)
 {
-    // breaks dataStr up and loads it into each member variable
+    setDataStr(dataStr);
 }
 
 MessagePacket::MessagePacket(const MessagePacket& otherPacket){
@@ -35,17 +35,53 @@ std::string MessagePacket::getDataStr()
     ss << _transmittor << ',' << _receiver << ',' << _sender << ',' << _destination << ',' << _hopCount << ',';
     while (std::getline(ss, currentStr, ','))
     {
-        dataStr += currentStr;
+        dataStr += currentStr + ',';
     }
 
-    ss << (double)_startTime.tv_sec;
-    std::getline(ss, currentStr);
+    ss.clear();
+    currentStr = "";
+    ss << (double)_startTime.tv_sec << ',';
+    ss >> currentStr;
     dataStr += currentStr;
-    
 
-    std::cout << "Data String: " << dataStr << '\n';
+    ss.clear();
+    currentStr = "";
+    ss << (double)_finalTime.tv_sec << ',';
+    ss >> currentStr;
+    dataStr += currentStr;
 
     return dataStr;
+}
+
+void MessagePacket::setDataStr(std::string dataStr)
+{
+    std::string trsmtrStr = "";
+    std::string rcvrStr = "";
+    std::string sndrStr = "";
+    std::string destStr = "";
+    std::string hCntStr = "";
+    std::string sTimeStr = "";
+    std::string fTimeStr = "";
+
+    std::stringstream ss;
+    ss << dataStr;
+
+    std::getline(ss, trsmtrStr, ',');
+    std::getline(ss, rcvrStr, ',');
+    std::getline(ss, sndrStr, ',');
+    std::getline(ss, destStr, ',');
+    std::getline(ss, hCntStr, ',');
+    std::getline(ss, sTimeStr, ',');
+    std::getline(ss, fTimeStr, ',');
+
+    setTransmittor(std::stoi(trsmtrStr));
+    setReceiver(std::stoi(rcvrStr));
+    setSender(std::stoi(sndrStr));
+    setDestination(std::stoi(destStr));
+    setHopCount(std::stoi(hCntStr));
+    setStartTime(std::stod(sTimeStr));
+    setFinalTime(std::stod(fTimeStr));
+    timeInterval.setTimes(getStartTime(), getFinalTime());
 }
 
 void MessagePacket::setTransmittor(uint16_t trsmtr)
@@ -102,18 +138,18 @@ void MessagePacket::setHopCount(uint16_t hpcount){
     this->_hopCount = hpcount;
 }
 
-void MessagePacket::setStartTime(timeval t) {
-    this->_startTime = t;
+void MessagePacket::setStartTime(double t) {
+    this->_startTime.tv_sec = t;
 }
-timeval MessagePacket::getStartTime() const{
-    return this->_startTime;
+double MessagePacket::getStartTime() const{
+    return this->_startTime.tv_sec;
 }
 
-void MessagePacket::setFinalTime(timeval t) {
-    this-> _finalTime = t;
+void MessagePacket::setFinalTime(double t) {
+    this-> _finalTime.tv_sec = t;
 }
-timeval MessagePacket::getFinalTime() const{
-    return this->_finalTime;
+double MessagePacket::getFinalTime() const{
+    return this->_finalTime.tv_sec;
 }
 
 void MessagePacket::setTimeInterval(TimeInterval t){

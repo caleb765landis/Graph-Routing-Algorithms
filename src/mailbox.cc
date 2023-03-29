@@ -69,24 +69,19 @@ int MailBox::send(uint16_t msgID, const void *packet, int len){
 	item msg = {len, (char *)packet};
 	int numBytes = sizeof(msg);
 
-	const MessagePacket * _packet = (MessagePacket*)packet;
-	std::cout << "Packet: " << _packet -> getTransmittor() << std::endl;
-
-	//std::cout << "Packet: " << msg.content->getTransmittor() << std::endl;
-
 	//std::cout << msg.content->getTransmittor() << std::cout;
 	//std::cout << (MessagePacket*)packet->getTransmittor() << std::endl;
 
 	// could be critical section
 	//mtx.lock();
-	//std::cout << "Packet: " << (char *)packet << std::endl;
-	// std::cout << "Item: " << msg.content << std::endl;
+	std::cout << "Packet: " << (char *)packet << std::endl;
+	std::cout << "Item: " << msg.content << std::endl;
 	std::lock_guard<std::mutex> lg(_mtx[msgID]);
 	_mailboxes[msgID].push(msg);
 	//mtx.unlock();
 
-	_packet = (MessagePacket*)_mailboxes[msgID].front().content;
-	std::cout << "Packet2: " << _packet->getTransmittor() << std::endl;
+	// _packet = (MessagePacket*)_mailboxes[msgID].front().content;
+	// std::cout << "Packet2: " << _packet->getTransmittor() << std::endl;
 
 	cvs[msgID].notify_one();
 
@@ -108,17 +103,17 @@ int MailBox::recv(uint16_t msgID, void *packet, int max){
 
 	// std::cout << _mailboxes[msgID].front().content -> getTransmittor() << std::endl;
 
-	std::cout << "Packet Addr: " << packet << std::endl;
-	//packet = _mailboxes[msgID].front().content;
-	std::cout << "Mailbox Packet Addr: " << packet << std::endl;
+	// std::cout << "Packet Addr: " << packet << std::endl;
+	// packet = _mailboxes[msgID].front().content;
+	// std::cout << "Mailbox Packet Addr: " << packet << std::endl;
 
-	MessagePacket* p = (MessagePacket*)packet;
-	std::cout << "Receive packet: " << std::endl;
-	std::cout << "P Addr: " << p << std::endl;
-	std::cout << p-> getTransmittor() << std::endl;
-	std::cout << p-> getReceiver() << std::endl;
-	std::cout << p-> getSender() << std::endl;
-	std::cout << p-> getDestination() << std::endl;
+	// MessagePacket* p = (MessagePacket*)packet;
+	// std::cout << "Receive packet: " << std::endl;
+	// std::cout << "P Addr: " << p << std::endl;
+	// std::cout << p-> getTransmittor() << std::endl;
+	// std::cout << p-> getReceiver() << std::endl;
+	// std::cout << p-> getSender() << std::endl;
+	// std::cout << p-> getDestination() << std::endl;
 	
 	MessagePacket mp = *(MessagePacket*)packet;
 	

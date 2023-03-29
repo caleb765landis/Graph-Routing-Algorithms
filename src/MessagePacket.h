@@ -23,7 +23,7 @@ public:
     ~MessagePacket();
 
     std::string getDataStr();
-    void setData(std::string dataStr);
+    void setDataStr(std::string dataStr);
 
     void setTransmittor(uint16_t trsmtr);
     uint16_t getTransmittor() const;
@@ -44,10 +44,10 @@ public:
 
     void timeStart(); // sets start time to keep track of how long message is in network
     void timeStop(); // sets final time to how long since start time has passed
-    void setStartTime(timeval t);
-    timeval getStartTime() const;
-    void setFinalTime(timeval t);
-    timeval getFinalTime() const;
+    void setStartTime(double t);
+    double getStartTime() const;
+    void setFinalTime(double t);
+    double getFinalTime() const;
 
     void setTimeInterval(TimeInterval t);
     TimeInterval getTimeInterval() const;

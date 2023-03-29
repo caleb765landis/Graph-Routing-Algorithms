@@ -13,6 +13,7 @@ public:
         void start();
         void stop();
 
+        void setTimes(double st, double ft);
         timeval getStartTime() const;
         timeval getEndTime() const;
         double GetInterval();

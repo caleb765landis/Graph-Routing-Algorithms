@@ -21,6 +21,12 @@ double TimeInterval::GetInterval()
         return t;
 }
 
+void TimeInterval::setTimes(double st, double ft)
+{
+        start_time.tv_sec = st;
+        end_time.tv_sec = ft;
+}
+
 timeval TimeInterval::getStartTime() const{
         return this->start_time;
 }
