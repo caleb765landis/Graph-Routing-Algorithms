@@ -1,15 +1,12 @@
 #include "MessagePacket.h"
 
+MessagePacket::MessagePacket()
+: _transmittor(0), _receiver(0), _sender(0), _destination(0), _hopCount(0)
+{}
+
 MessagePacket::MessagePacket(uint16_t sendr, uint16_t dest, uint16_t rcvr)
 : _transmittor(sendr), _receiver(rcvr), _sender(sendr), _destination(dest), _hopCount(0)
-{
-    timeStart();
-
-//     std::cout << "\nIN MESSAGE PACKET: " << getTransmittor() << std::endl;
-//     std::cout << "Receiver: "<< getReceiver() << std::endl;
-//     std::cout << "Sender: "<< getSender() << std::endl;
-//     std::cout << "Destination: "<< getDestination() << std::endl;
-}
+{}
 
 MessagePacket::MessagePacket(std::string dataStr)
 {
@@ -20,14 +17,19 @@ MessagePacket::MessagePacket(const MessagePacket& otherPacket){
     copyMessagePacket(otherPacket);
 }
 
-MessagePacket::MessagePacket()
-: _transmittor(0), _receiver(0), _sender(0), _destination(0), _hopCount(0)
-{}
-
 MessagePacket::~MessagePacket()
 {}
 
-std::string MessagePacket::getDataStr()
+void MessagePacket::init(uint16_t sendr, uint16_t dest, uint16_t rcvr)
+{
+    _transmittor = sendr;
+    _receiver = rcvr;
+    _sender = sendr;
+    _destination = dest;
+    _hopCount = 0;
+}
+
+    std::string MessagePacket::getDataStr()
 {
     std::string dataStr = "";
     std::string currentStr = "";

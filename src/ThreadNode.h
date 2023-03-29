@@ -5,6 +5,7 @@
 #include <thread>
 #include <vector>
 #include <stdint.h>
+#include <cstdlib>
 #include "mbox.h"
 #include "MessagePacket.h"
 
@@ -21,6 +22,9 @@ class ThreadNode
 
 		void run();
 		void thread_recv(void*);
+
+		void randSleep(double mean);
+		void randCool(double min, double max);
 	private:
 		MessagePacket _msg;
 		uint16_t _ID;

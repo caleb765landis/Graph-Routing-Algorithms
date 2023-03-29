@@ -22,6 +22,8 @@ public:
     MessagePacket();
     ~MessagePacket();
 
+    void init(uint16_t sendr, uint16_t dest, uint16_t rcvr);
+
     std::string getDataStr();
     void setDataStr(std::string dataStr);
 
