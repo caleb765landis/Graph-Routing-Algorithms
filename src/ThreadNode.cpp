@@ -5,7 +5,7 @@ ThreadNode::ThreadNode()
 }
 
 ThreadNode::ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, std::vector<ThreadNode> *nodes)
-    : _ID(id), _neighbors(neighbors), _nodes(nodes)
+    : _ID(id), _neighbors(neighbors), _nodes(nodes), _numMessagesReceived(0)
 {
 }
 
@@ -46,13 +46,15 @@ void ThreadNode::run()
         if ((uint16_t)destination != this->getID())
         {
             keepGoing = false;
-            std::cout << "Random destination: " << destination << std::endl;
+            std::cout << "Random destination: " << destination << std::endl << std::endl;
         }
     }
+
     // Pick a random threadnode based on neighbors list
     // Set receiver to chosen neighbor
     int receiverLoc = rand() % _neighbors.size();
     uint16_t receiver = _neighbors[receiverLoc];
+    std::cout << "Receiver: " << receiver << std::endl;
 
     // Initialize message packet information
     _msg.init(sender, (uint16_t)destination, receiver);
@@ -65,7 +67,7 @@ void ThreadNode::run()
 
     // Get message packet data str
     std::string dataStr = _msg.getDataStr();
-    std::cout << "DataStr in run: " << dataStr << std::endl;
+    std::cout << "DataStr in run: " << dataStr << std::endl << std::endl;
 
     // Send message to that chosen threadnode receiver's mailbox using _mailbox.mbox_send
     const char *dataPtr = dataStr.c_str();
@@ -84,22 +86,63 @@ void ThreadNode::thread_recv()
     std::cout << "Buffer: " << _buffer << " - Bytes - " << rbytes << std::endl << std::endl;
 
     // Create a temporary MessagePacket
+    MessagePacket temp(_buffer);
 
     // Increase threadnode's receive count
-    // Increase message's hop count
-    // Check if message's final destination is this thread
+    _numMessagesReceived++;
 
+    // Increase message's hop count
+    temp.incHopCount();
+
+    // Check if message's final destination is this thread
     // If this is final destination:
-    // Determine hop count and time that message has been in network
-    // Store these values in lists for finalHopCounts and finalTimeTraveledVals
+    if (temp.getDestination() == this->getID())
+    {
+        // Stop message timer
+        temp.timeStop();
+
+        // Determine hop count and time that message has been in network
+        std::cout << "Hop Count: " << temp.getHopCount() << " - Time Interval: " << temp.getFinalTimeInterval() << std::endl << std::endl;
+
+        std::cout << "/* ----------------------------------- // ----------------------------------- */" << std::endl << std::endl;
+
+        // Store these values in lists for finalHopCounts and finalTimeTraveledVals
 
     // If this is not final destination:
-    // Cool down for a random time
-    // Choose new neighbor who is not one that the message was sent from
-    // Change message's transmittor to this node and receiver to chosen neighbor
-    // Send message to that chosen threadnode's mailbox using _mailbox.mbox_send
-    // Call thread_recv on next threadnode
-}
+    } else {
+        // Cool down for a random time
+        this->randCool(0, 1);
+
+        // Choose new neighbor as receiver who is not one that the message was sent from
+        uint16_t receiver;
+        bool keepGoing = true;
+        while (keepGoing)
+        {
+            int receiverLoc = rand() % _neighbors.size();
+            receiver = _neighbors[receiverLoc];
+            if (receiver != temp.getTransmittor())
+            {
+                keepGoing = false;
+                temp.setReceiver(receiver);
+                std::cout << "New Receiver: " << receiver << std::endl;
+            } // end if
+        } // end while
+
+        // Change message's transmittor to this node
+        temp.setTransmittor(this->getID());
+
+        // Get updated message data
+        std::string dataStr = temp.getDataStr();
+        std::cout << "Updated dataStr: " << dataStr << std::endl;
+
+        // Send message to that chosen threadnode receiver's mailbox using _mailbox.mbox_send
+        const char *dataPtr = dataStr.c_str();
+        mbox_send(receiver, dataPtr, strlen(dataPtr));
+
+        // Call thread_recv on chosen threadnode receiver
+        _nodes->at(receiver).thread_recv();
+    } // end if
+} // end thread_recv
 
 void ThreadNode::randSleep(double mean)
 {

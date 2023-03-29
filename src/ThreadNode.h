@@ -26,8 +26,9 @@ class ThreadNode
 		void randSleep(double mean);
 		void randCool(double min, double max);
 	private:
-		MessagePacket _msg;
 		uint16_t _ID;
+		MessagePacket _msg;
+		int _numMessagesReceived;
 		std::vector<uint16_t> _neighbors;
 		std::vector<ThreadNode>* _nodes;
 		char _buffer[MAX];

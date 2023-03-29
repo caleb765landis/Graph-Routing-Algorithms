@@ -56,7 +56,6 @@ public:
     void setTimeInterval(TimeInterval t);
     TimeInterval getTimeInterval() const;
 
-    // stops timer if finalTime is 0. returns total time message was in network
     // difference of stop time and start time
     double getFinalTimeInterval(); 
 
