@@ -31,14 +31,13 @@ int main(){
 		nodes.push_back(temp);
 	}
 
+	// Each threadnode will have a thread that runs the threadnode's run method
+	// This method will begin the random message writing and passing
 	for (int i = 0; i < graph.getNumNodes(); i++)
 	{
 		nodes[i].run();
 	}
 
-	// Each threadnode will have a thread that runs the threadnode's run method
-	// This method will begin the random message writing and passing
-	
 	// join threads once all processes have finished
 
 	// Go through each threadnode and report thread activity
