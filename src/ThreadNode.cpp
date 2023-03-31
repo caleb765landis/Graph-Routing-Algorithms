@@ -117,19 +117,28 @@ void ThreadNode::thread_recv()
         this->randCool(50);
 
         // Choose new neighbor as receiver who is not one that the message was sent from
-        uint16_t receiver;
-        bool keepGoing = true;
-        while (keepGoing)
-        {
-            int receiverLoc = rand() % _neighbors.size();
-            receiver = _neighbors[receiverLoc];
-            if (receiver != temp.getTransmittor())
-            {
-                keepGoing = false;
-                temp.setReceiver(receiver);
-                std::cout << "New Receiver: " << receiver << std::endl;
-            } // end if
-        } // end while
+        uint16_t receiver = getRandomNeighbor(temp.getTransmittor());
+        temp.setReceiver(receiver);
+
+        /* Note for approval - Michael
+            The function getRandomNeighbor does what the following commented
+            code does with a uniform distribution and is thread safe
+ 
+            I commented out the code below*/
+
+        // uint16_t receiver;
+        // bool keepGoing = true;
+        // while (keepGoing)
+        // {
+        //     int receiverLoc = rand() % _neighbors.size();
+        //     receiver = _neighbors[receiverLoc];
+        //     if (receiver != temp.getTransmittor())
+        //     {
+        //         keepGoing = false;
+        //         temp.setReceiver(receiver);
+        //         std::cout << "New Receiver: " << receiver << std::endl;
+        //     } // end if
+        // } // end while
 
         // Change message's transmittor to this node
         temp.setTransmittor(this->getID());
@@ -166,29 +175,34 @@ uint16_t ThreadNode::getRandomNeighbor(uint16_t prevSender) const
 {
     // get a random number from a uniform distribution in the range
     // of 0 and the number of neighbors that to this Node
-    uint16_t r = rand_uniform(0, _neighbors.size() - 1);
+    // this will be the neighbor's index
+    uint16_t nborIndex = rand_uniform(0, _neighbors.size() - 1);
+    uint16_t nbor;
 
-    // if the neighbor at index "r" was the last sender of the the
-    // message then get a new random index "r"
-    if(_neighbors.at(r) == prevSender)
-        r = getRandomNeighbor(prevSender);
+    // if the neighbor at index "nborIndex" was the last sender of the the
+    // message then get a neighbor "nbor"
+    if(_neighbors.at(nborIndex) == prevSender){
+        nbor = getRandomNeighbor(prevSender);
+    }
+    else{
+        // if not assign neighbor
+        nbor = _neighbors.at(nborIndex);
+    }
 
-    // return the neighnbor at the index of r
-    return _neighbors.at(r);
+    return nbor;
 }
 
 uint16_t ThreadNode::getDestination(uint16_t min, uint16_t max) const
 {
     // get a random number from a uniform distribution in the range
-    // of min to max which should be 0 and total number of nodes - 1
-    uint16_t r = rand_uniform(min, max);
+    // of min to max which should be 0 and total number of nodes in
+    // the graph - 1
+    uint16_t destination = rand_uniform(min, max);
 
-    // if the random number equals this nodes ID then we choose
-    // another
-    if(r == _ID)
-        r = rand_uniform(min, max);
+    if(destination == this -> _ID)
+        destination = rand_uniform(min, max);
     
-    return r;
+    return destination;
 }
 
 double ThreadNode::rand_exponential(double mean) const
