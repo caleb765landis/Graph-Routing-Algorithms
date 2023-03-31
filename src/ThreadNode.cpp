@@ -155,3 +155,77 @@ void ThreadNode::randCool(double min, double max)
     // apply rand_exponential algorithm then sleep for that time
     std::cout << "cooling" << std::endl;
 }
+
+
+void ThreadNode::randSleep()
+{
+    int randNumber = (int)(rand_exponential(100) * 1000);
+    // _rand_mtx.lock();
+    // std::cout << "Random - " << randNumber << std::endl;
+    // _rand_mtx.unlock();
+    std::this_thread::sleep_for(std::chrono::milliseconds(randNumber));
+}
+
+void ThreadNode::randCooling()
+{
+    int randNumber = (int)(rand_exponential(10) * 1000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(randNumber));
+}
+
+uint16_t ThreadNode::getRandomNeighbor(uint16_t prevSender) const
+{
+    // get a random number from a uniform distribution in the range
+    // of 0 and the number of neighbors that to this Node
+    uint16_t r = rand_uniform(0, _neighbors.size() - 1);
+
+    // if the neighbor at index "r" was the last sender of the the
+    // message then get a new random index "r"
+    if(_neighbors.at(r) == prevSender)
+        r = getRandomNeighbor(prevSender);
+
+    // return the neighnbor at the index of r
+    return _neighbors.at(r);
+}
+
+uint16_t ThreadNode::getDestination(uint16_t min, uint16_t max) const
+{
+    // get a random number from a uniform distribution in the range
+    // of min to max which should be 0 and total number of nodes - 1
+    uint16_t r = rand_uniform(min, max);
+
+    // if the random number equals this nodes ID then we choose
+    // another
+    if(r == _ID)
+        r = rand_uniform(min, max);
+    
+    return r;
+}
+
+double ThreadNode::rand_exponential(double mean) const
+{
+    std::exponential_distribution<double> expDistro(mean);
+    // create an exponinetial distribution around the mean
+
+    _rand_mtx.lock();
+    // get a random number fron that distribution based on
+    // the static generator
+    double randNumber = expDistro(_generator);
+    // std::cout << "Exp Random: " << randNumber << std::endl;
+    _rand_mtx.unlock();
+
+    return randNumber;
+}
+
+uint16_t ThreadNode::rand_uniform(uint16_t min, uint16_t max) const
+{
+    std::uniform_int_distribution<uint16_t> uniDistro(min, max);
+    // create a uniform distribution between the min and max
+
+    _rand_mtx.lock();
+    // get a random number from that distribution based on
+    // the static generator
+    uint16_t randNumber = uniDistro(_generator);
+    _rand_mtx.unlock();
+
+    return randNumber;
+}

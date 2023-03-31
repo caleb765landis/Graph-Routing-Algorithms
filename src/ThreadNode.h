@@ -24,7 +24,9 @@ class ThreadNode
 		void thread_recv();
 
 		void randSleep(double mean);
-		void randCool(double min, double max);
+		void randCool(uint16_t min, uint16_t max);
+		uint16_t getRandomNeighbor(uint16_t prevSender) const;
+		uint16_t getDestination(uint16_t min, uint16_t max) const;
 	private:
 		uint16_t _ID;
 		MessagePacket _msg;
@@ -32,6 +34,11 @@ class ThreadNode
 		std::vector<uint16_t> _neighbors;
 		std::vector<ThreadNode>* _nodes;
 		char _buffer[MAX];
+
+		double rand_exponential(double mean) const;
+		uint16_t rand_uniform(uint16_t min, uint16_t max) const;
+
+
 };
 
 #endif
