@@ -4,6 +4,8 @@
 
 #include <thread>
 #include <vector>
+#include <random>
+#include <mutex>
 #include <stdint.h>
 #include <cstdlib>
 #include "mbox.h"
@@ -24,7 +26,7 @@ class ThreadNode
 		void thread_recv();
 
 		void randSleep(double mean);
-		void randCool(uint16_t min, uint16_t max);
+		void randCool(double mean);
 		uint16_t getRandomNeighbor(uint16_t prevSender) const;
 		uint16_t getDestination(uint16_t min, uint16_t max) const;
 	private:
@@ -33,6 +35,8 @@ class ThreadNode
 		int _numMessagesReceived;
 		std::vector<uint16_t> _neighbors;
 		std::vector<ThreadNode>* _nodes;
+		static std::default_random_engine _generator;
+		static std::mutex _rand_mtx;
 		char _buffer[MAX];
 
 		double rand_exponential(double mean) const;

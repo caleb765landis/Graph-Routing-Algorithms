@@ -1,5 +1,8 @@
 #include "ThreadNode.h"
 
+std::default_random_engine ThreadNode::_generator;
+std::mutex ThreadNode::_rand_mtx;
+
 ThreadNode::ThreadNode()
 {
 }
@@ -111,7 +114,7 @@ void ThreadNode::thread_recv()
     // If this is not final destination:
     } else {
         // Cool down for a random time
-        this->randCool(0, 1);
+        this->randCool(50);
 
         // Choose new neighbor as receiver who is not one that the message was sent from
         uint16_t receiver;
@@ -146,29 +149,16 @@ void ThreadNode::thread_recv()
 
 void ThreadNode::randSleep(double mean)
 {
-    // apply rand_exponential algorithm then sleep for that time
-    std::cout << "sleeping" << std::endl;
-}
-
-void ThreadNode::randCool(double min, double max)
-{
-    // apply rand_exponential algorithm then sleep for that time
-    std::cout << "cooling" << std::endl;
-}
-
-
-void ThreadNode::randSleep()
-{
-    int randNumber = (int)(rand_exponential(100) * 1000);
+    int randNumber = (int)(rand_exponential(mean) * 1000);
     // _rand_mtx.lock();
     // std::cout << "Random - " << randNumber << std::endl;
     // _rand_mtx.unlock();
     std::this_thread::sleep_for(std::chrono::milliseconds(randNumber));
 }
 
-void ThreadNode::randCooling()
+void ThreadNode::randCool(double mean)
 {
-    int randNumber = (int)(rand_exponential(10) * 1000);
+    int randNumber = (int)(rand_exponential(mean) * 1000);
     std::this_thread::sleep_for(std::chrono::milliseconds(randNumber));
 }
 
