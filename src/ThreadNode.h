@@ -28,7 +28,7 @@ class ThreadNode
 		void randSleep(double mean);
 		void randCool(double mean);
 		uint16_t getRandomNeighbor(uint16_t prevSender) const;
-		uint16_t getDestination(uint16_t min, uint16_t max) const;
+		uint16_t createDestination(uint16_t min, uint16_t max) const;
 	private:
 		uint16_t _ID;
 		MessagePacket _msg;

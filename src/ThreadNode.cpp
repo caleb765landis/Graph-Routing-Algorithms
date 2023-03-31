@@ -192,7 +192,7 @@ uint16_t ThreadNode::getRandomNeighbor(uint16_t prevSender) const
     return nbor;
 }
 
-uint16_t ThreadNode::getDestination(uint16_t min, uint16_t max) const
+uint16_t ThreadNode::createDestination(uint16_t min, uint16_t max) const
 {
     // get a random number from a uniform distribution in the range
     // of min to max which should be 0 and total number of nodes in
