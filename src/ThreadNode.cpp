@@ -194,6 +194,10 @@ uint16_t ThreadNode::getRandomNeighbor(uint16_t prevSender) const
 
 uint16_t ThreadNode::createDestination(uint16_t min, uint16_t max) const
 {
+    // This should only be used when creating a message will find
+    // The only error checking is to see if the random number is
+    // the current ID
+    // 
     // get a random number from a uniform distribution in the range
     // of min to max which should be 0 and total number of nodes in
     // the graph - 1
