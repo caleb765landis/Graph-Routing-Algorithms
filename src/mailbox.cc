@@ -64,14 +64,17 @@ bool MailBox::empty(uint16_t msgID){
 }
 
 int MailBox::send(uint16_t msgID, const void *packet, int len){
-	item msg = {len, (char *)packet};
-	int numBytes = sizeof(msg);
+	char* msg = (char*)malloc(len + 1);
+	strcpy(msg, (char*)packet);
+
+	item pckt = {len, msg};
+	int numBytes = sizeof(pckt);
 
 	// could be critical section
-	//mtx.lock();
 	std::lock_guard<std::mutex> lg(_mtx[msgID]);
-	_mailboxes[msgID].push(msg);
-	//mtx.unlock();
+
+	// std::cout << msgID << " - MAILBOX SEND: " << msg << std::endl;
+	_mailboxes[msgID].push(pckt);
 
 	cvs[msgID].notify_all();
 
@@ -80,7 +83,8 @@ int MailBox::send(uint16_t msgID, const void *packet, int len){
 
 int MailBox::recv(uint16_t msgID, void *packet, int max){
 	int numBytes = 0;
-	
+	// char* buffer = (char*)malloc(max);
+
 	// critical section
 	std::unique_lock<std::mutex> lk(_mtx[msgID]);
 	bool empty = _mailboxes[msgID].empty();
@@ -88,9 +92,12 @@ int MailBox::recv(uint16_t msgID, void *packet, int max){
 
 	// copy the message at msgID into the buffer and then pop()
 	// the message from the queue
+	// std::cout << msgID << " - MAILBOX RECV - IN - " << _mailboxes[msgID].front().content << std::endl;
+
 	strcpy((char*)packet, _mailboxes[msgID].front().content);
-	// packet = _mailboxes[msgID].front().content;
+	// std::cout << msgID << " - MAILBOX RECV - OUT - " << (char*)packet << std::endl;
 	
+	free(_mailboxes[msgID].front().content);
 	_mailboxes[msgID].pop();
 
 	// get the size of the packet

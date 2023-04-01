@@ -31,14 +31,15 @@ uint16_t ThreadNode::getID() const
 uint16_t ThreadNode::thread_send()
 {
     MessagePacket msg = createMessage();
-    const char *dataPtr = msg.getDataStr().c_str();
+    std::string m = msg.getDataStr();
+    const char *dataPtr = m.c_str();
 
     // Set current time as start of keeping track of how long message is in network
     msg.timeStart();
 
     _rand_mtx.lock();
     std::cout << "Node (" << _ID << ") - sending - ";
-    std::cout << msg << " - ";
+    std::cout << "M: " << m.c_str() << " - ";
     std::cout << " - to - (" << msg.getReceiver() << ") ";
     std::cout << " - dest - (" << msg.getDestination() << ")\n";
     _rand_mtx.unlock();
@@ -61,14 +62,16 @@ MessagePacket ThreadNode::createMessage()
 
 void ThreadNode::thread_recv()
 {
+    printTestInfo(_ID, "thread_recv");
     // Receive message from mailbox and store it in buffer
-    int rbytes = mbox_recv(this->getID(), _buffer, MAX);
+    if(mbox_empty(_ID))
+        return;
+    
+    int rbytes = mbox_recv(this->getID(), &_buffer, MAX);
 
-    _rand_mtx.lock();
     std::string test = "In thread_recv for node " + std::to_string(getID()) + 
                         ": \nBuffer: " + _buffer + " - Bytes - " + std::to_string(rbytes) + "\n";
-   printTestInfo(_ID, test);
-    _rand_mtx.unlock();
+    printTestInfo(_ID, test);
 
     // Create a temporary MessagePacket
     MessagePacket temp(_buffer);
@@ -85,8 +88,7 @@ void ThreadNode::thread_recv()
 
         // Determine hop count and time that message has been in network
         _rand_mtx.lock();
-        std::cout << "Hop Count: " << temp.getHopCount() << " - Time Interval: " << temp.getFinalTimeInterval() << std::endl << std::endl;
-        std::cout << "/* ----------------------------------- // ----------------------------------- */" << std::endl << std::endl;
+        std::cout << _ID << " - dataString: " << temp <<" - Hop Count: " << temp.getHopCount() << " - Time Interval: " << temp.getFinalTimeInterval() << " - Dest: " << temp.getDestination()<< std::endl;
         _rand_mtx.unlock();
 
         // Store these values in lists for finalHopCounts and finalTimeTraveledVals
@@ -108,7 +110,9 @@ void ThreadNode::thread_recv()
 
         // Get updated message data
         std::string dataStr = temp.getDataStr();
-        std::cout << "Updated dataStr: " << dataStr << std::endl;
+        _rand_mtx.lock();
+        std::cout << _ID << " - Updated dataStr: " << dataStr << std::endl;
+        _rand_mtx.unlock();
 
         // Send message to that chosen threadnode receiver's mailbox using _mailbox.mbox_send
         const char *dataPtr = dataStr.c_str();
@@ -118,21 +122,6 @@ void ThreadNode::thread_recv()
         // _nodes->at(receiver).thread_recv();
     } // end if
 } // end thread_recv
-
-void ThreadNode::randSleep(double mean)
-{
-    int randNumber = (int)(rand_exponential(mean) * 1000);
-    // _rand_mtx.lock();
-    // std::cout << "Random - " << randNumber << std::endl;
-    // _rand_mtx.unlock();
-    std::this_thread::sleep_for(std::chrono::milliseconds(randNumber));
-}
-
-void ThreadNode::randCool(double mean)
-{
-    int randNumber = (int)(rand_exponential(mean) * 1000);
-    std::this_thread::sleep_for(std::chrono::milliseconds(randNumber));
-}
 
 uint16_t ThreadNode::passPotato(uint16_t transmittor, uint16_t destination){
     printTestInfo(_ID, "passPotato");
@@ -199,6 +188,18 @@ uint16_t ThreadNode::createDestination(uint16_t min, uint16_t max) const
     return destination;
 }
 
+void ThreadNode::randSleep(double mean)
+{
+    int randNumber = (int)(rand_exponential(mean) * 1000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(randNumber));
+}
+
+void ThreadNode::randCool(double mean)
+{
+    int randNumber = (int)(rand_exponential(mean) * 1000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(randNumber));
+}
+
 double ThreadNode::rand_exponential(double mean) const
 {
     std::exponential_distribution<double> expDistro(mean);
@@ -230,7 +231,7 @@ uint16_t ThreadNode::rand_uniform(uint16_t min, uint16_t max) const
 
 void ThreadNode::printTestInfo(uint16_t id, std::string note) const
 {
-    _rand_mtx.lock();
-    std::cout << "\t\t" << id << " - " << note << std::endl;
-    _rand_mtx.unlock();
+    // _rand_mtx.lock();
+    // std::cout << "\t\t" << id << " - " << note << std::endl;
+    // _rand_mtx.unlock();
 }
