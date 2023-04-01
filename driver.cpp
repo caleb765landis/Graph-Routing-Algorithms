@@ -27,10 +27,16 @@ int main(){
 
 	for (int i = 0; i < graph.getNumNodes(); i++)
 	{
-		ThreadNode temp(i, graph.getNeighbors(i), &nodes);
+		ThreadNode temp(i, graph.getNeighbors(i), graph.getNumNodes());
 		nodes.push_back(temp);
 	}
 
+	std::vector<std::thread> threads;
+	std::vector<ThreadNode>::iterator it;
+	for(it = nodes.begin(); it < nodes.end(); it++)
+	{
+		std::thread t(ThreadNode::run(),&*it, );
+	}
 	// Each threadnode will have a thread that runs the threadnode's run method
 	// This method will begin the random message writing and passing
 	for (int i = 0; i < graph.getNumNodes(); i++)

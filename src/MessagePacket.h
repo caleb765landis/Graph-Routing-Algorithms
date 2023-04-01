@@ -24,7 +24,7 @@ public:
 
     void init(uint16_t sendr, uint16_t dest, uint16_t rcvr);
 
-    std::string getDataStr();
+    std::string getDataStr() const;
     void setDataStr(std::string dataStr);
 
     void setTransmittor(uint16_t trsmtr);
@@ -60,6 +60,7 @@ public:
     double getFinalTimeInterval(); 
 
     MessagePacket operator=(const MessagePacket& other);
+    friend std::ostream& operator<<(std::ostream& out, const MessagePacket& packet);
 
 private:
     uint16_t _transmittor; // threadnode that last sent the message

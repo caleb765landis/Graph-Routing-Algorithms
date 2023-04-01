@@ -7,77 +7,56 @@ ThreadNode::ThreadNode()
 {
 }
 
-ThreadNode::ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, std::vector<ThreadNode> *nodes)
-    : _ID(id), _neighbors(neighbors), _nodes(nodes), _numMessagesReceived(0)
-{
-}
+ThreadNode::ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, uint16_t totalNodes)
+    : _ID(id), _neighbors(neighbors), _total_nodes(totalNodes), _numMessagesReceived(0)
+{}
 
 ThreadNode::~ThreadNode()
 {
 }
 
-uint16_t ThreadNode::getID() const
-{
-    return this->_ID;
-}
-
 void ThreadNode::run()
 {
-    // std::cout << "Nodes 0: " << _nodes -> at(0).getID() << std::endl;
-    // std::cout << "Nodes 1: " << _nodes -> at(1).getID() << std::endl;
-
-    std::cout << "Node ID: " << this->getID() << std::endl;
-    std::cout << "Neighbors: ";
-    std::vector<uint16_t>::iterator it;
-    for (it = _neighbors.begin(); it != _neighbors.end(); it++)
+    while (true)
     {
-        std::cout << *it << "-";
+        randSleep(50);
+        thread_send();
+        thread_recv();
     }
-    std::cout << std::endl;
+}
 
-    // seed random? probably don't want so it's easier to tell when everything's working
+uint16_t ThreadNode::getID() const
+{return this->_ID;}
 
-    // Set message's sender to this node
-    uint16_t sender = this->getID();
-
-    // Set final destination of message to random thread that is not current thread
-    int destination;
-    bool keepGoing = true;
-    while (keepGoing)
-    {
-        destination = rand() % _nodes->size();
-        if ((uint16_t)destination != this->getID())
-        {
-            keepGoing = false;
-            std::cout << "Random destination: " << destination << std::endl << std::endl;
-        }
-    }
-
-    // Pick a random threadnode based on neighbors list
-    // Set receiver to chosen neighbor
-    int receiverLoc = rand() % _neighbors.size();
-    uint16_t receiver = _neighbors[receiverLoc];
-    std::cout << "Receiver: " << receiver << std::endl;
-
-    // Initialize message packet information
-    _msg.init(sender, (uint16_t)destination, receiver);
-
-    // Sleep for random duration
-    this->randSleep(5);
+uint16_t ThreadNode::thread_send()
+{
+    MessagePacket msg = createMessage();
+    const char *dataPtr = msg.getDataStr().c_str();
 
     // Set current time as start of keeping track of how long message is in network
-    _msg.timeStart();
+    msg.timeStart();
 
-    // Get message packet data str
-    std::string dataStr = _msg.getDataStr();
-    std::cout << "DataStr in run: " << dataStr << std::endl << std::endl;
+    _rand_mtx.lock();
+    std::cout << "Node (" << _ID << ") - sending - ";
+    std::cout << msg << " - ";
+    std::cout << " - to - (" << msg.getReceiver() << ") ";
+    std::cout << " - dest - (" << msg.getDestination() << ")\n";
+    _rand_mtx.unlock();
 
-    // Send message to that chosen threadnode receiver's mailbox using _mailbox.mbox_send
-    const char *dataPtr = dataStr.c_str();
-    mbox_send(receiver, dataPtr, strlen(dataPtr));
+    uint16_t bytes = mbox_send(msg.getReceiver(), dataPtr, strlen(dataPtr));
 
-    // Call thread_recv on chosen threadnode receiver
-    _nodes -> at(receiver).thread_recv();
+    return bytes;
+}
+
+MessagePacket ThreadNode::createMessage()
+{
+    printTestInfo(_ID, "Create Message");
+
+    uint16_t random_dest = createDestination(0, _total_nodes - 1);
+    uint16_t random_recv = getRandomNeighbor(_ID);
+    // MessagePacket msg(this->_ID, random_dest, random_recv);
+    MessagePacket msg(this->_ID, random_dest, random_recv);
+    return msg;
 }
 
 void ThreadNode::thread_recv()
@@ -85,17 +64,17 @@ void ThreadNode::thread_recv()
     // Receive message from mailbox and store it in buffer
     int rbytes = mbox_recv(this->getID(), _buffer, MAX);
 
-    std::cout << "In thread_recv for node " << this->getID() << ": " << std::endl;
-    std::cout << "Buffer: " << _buffer << " - Bytes - " << rbytes << std::endl << std::endl;
+    _rand_mtx.lock();
+    std::string test = "In thread_recv for node " + std::to_string(getID()) + 
+                        ": \nBuffer: " + _buffer + " - Bytes - " + std::to_string(rbytes) + "\n";
+   printTestInfo(_ID, test);
+    _rand_mtx.unlock();
 
     // Create a temporary MessagePacket
     MessagePacket temp(_buffer);
 
     // Increase threadnode's receive count
     _numMessagesReceived++;
-
-    // Increase message's hop count
-    temp.incHopCount();
 
     // Check if message's final destination is this thread
     // If this is final destination:
@@ -105,9 +84,10 @@ void ThreadNode::thread_recv()
         temp.timeStop();
 
         // Determine hop count and time that message has been in network
+        _rand_mtx.lock();
         std::cout << "Hop Count: " << temp.getHopCount() << " - Time Interval: " << temp.getFinalTimeInterval() << std::endl << std::endl;
-
         std::cout << "/* ----------------------------------- // ----------------------------------- */" << std::endl << std::endl;
+        _rand_mtx.unlock();
 
         // Store these values in lists for finalHopCounts and finalTimeTraveledVals
 
@@ -115,30 +95,13 @@ void ThreadNode::thread_recv()
     } else {
         // Cool down for a random time
         this->randCool(50);
+        temp.incHopCount();
 
         // Choose new neighbor as receiver who is not one that the message was sent from
-        uint16_t receiver = getRandomNeighbor(temp.getTransmittor());
+        uint16_t from = temp.getTransmittor();
+        uint16_t to = temp.getDestination();
+        uint16_t receiver = passPotato(from, to);
         temp.setReceiver(receiver);
-
-        /* Note for approval - Michael
-            The function getRandomNeighbor does what the following commented
-            code does with a uniform distribution and is thread safe
- 
-            I commented out the code below*/
-
-        // uint16_t receiver;
-        // bool keepGoing = true;
-        // while (keepGoing)
-        // {
-        //     int receiverLoc = rand() % _neighbors.size();
-        //     receiver = _neighbors[receiverLoc];
-        //     if (receiver != temp.getTransmittor())
-        //     {
-        //         keepGoing = false;
-        //         temp.setReceiver(receiver);
-        //         std::cout << "New Receiver: " << receiver << std::endl;
-        //     } // end if
-        // } // end while
 
         // Change message's transmittor to this node
         temp.setTransmittor(this->getID());
@@ -151,8 +114,8 @@ void ThreadNode::thread_recv()
         const char *dataPtr = dataStr.c_str();
         mbox_send(receiver, dataPtr, strlen(dataPtr));
 
-        // Call thread_recv on chosen threadnode receiver
-        _nodes->at(receiver).thread_recv();
+        // // Call thread_recv on chosen threadnode receiver
+        // _nodes->at(receiver).thread_recv();
     } // end if
 } // end thread_recv
 
@@ -169,6 +132,33 @@ void ThreadNode::randCool(double mean)
 {
     int randNumber = (int)(rand_exponential(mean) * 1000);
     std::this_thread::sleep_for(std::chrono::milliseconds(randNumber));
+}
+
+uint16_t ThreadNode::passPotato(uint16_t transmittor, uint16_t destination){
+    printTestInfo(_ID, "passPotato");
+
+    std::vector<uint16_t>::const_iterator neighbor;
+    uint16_t random_receiver = this->_ID;
+
+    // if the final destination is in the neighbors of this
+    // node then we can send it directly to it's destination
+    // without running a random number
+    for(neighbor = _neighbors.begin(); neighbor < _neighbors.end(); neighbor++){
+        if(*neighbor == destination){
+            random_receiver = *neighbor;
+            break;
+        }
+    }
+
+    // if the destination is not in the path of neighbors then the
+    // random receiver should still be this nodes ID and will then
+    // find a random receiver for the message
+    if(random_receiver == this->_ID){
+        // find a random neighbor and set equal to destination
+        random_receiver = getRandomNeighbor(transmittor);
+    }
+
+    return random_receiver;
 }
 
 uint16_t ThreadNode::getRandomNeighbor(uint16_t prevSender) const
@@ -236,4 +226,11 @@ uint16_t ThreadNode::rand_uniform(uint16_t min, uint16_t max) const
     _rand_mtx.unlock();
 
     return randNumber;
+}
+
+void ThreadNode::printTestInfo(uint16_t id, std::string note) const
+{
+    _rand_mtx.lock();
+    std::cout << "\t\t" << id << " - " << note << std::endl;
+    _rand_mtx.unlock();
 }

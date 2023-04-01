@@ -73,7 +73,7 @@ int MailBox::send(uint16_t msgID, const void *packet, int len){
 	_mailboxes[msgID].push(msg);
 	//mtx.unlock();
 
-	cvs[msgID].notify_one();
+	cvs[msgID].notify_all();
 
 	return numBytes;
 }
@@ -84,7 +84,7 @@ int MailBox::recv(uint16_t msgID, void *packet, int max){
 	// critical section
 	std::unique_lock<std::mutex> lk(_mtx[msgID]);
 	bool empty = _mailboxes[msgID].empty();
-	//cvs[msgID].wait(lk, [empty]{return !empty;});
+	cvs[msgID].wait_for(lk, std::chrono::milliseconds(100) ,[empty]{return !empty;});
 
 	// copy the message at msgID into the buffer and then pop()
 	// the message from the queue

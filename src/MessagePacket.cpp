@@ -29,7 +29,7 @@ void MessagePacket::init(uint16_t sendr, uint16_t dest, uint16_t rcvr)
     _hopCount = 0;
 }
 
-    std::string MessagePacket::getDataStr()
+std::string MessagePacket::getDataStr() const
 {
     std::string dataStr = "";
     std::string currentStr = "";
@@ -176,4 +176,10 @@ void MessagePacket::copyMessagePacket(const MessagePacket& other){
 MessagePacket MessagePacket::operator=(const MessagePacket& other){
     copyMessagePacket(other);
     return *this;
+}
+
+std::ostream& operator<<(std::ostream& out, const MessagePacket& packet)
+{
+    out << packet.getDataStr();
+    return out;
 }
