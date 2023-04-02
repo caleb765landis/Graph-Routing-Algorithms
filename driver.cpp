@@ -13,7 +13,7 @@
 
 int main(){
 	// Read from graph data file and store in ThreadGraph
-	ThreadGraph graph("graph/A10.dat");
+	ThreadGraph graph("graph/A25.dat");
 	std::vector<ThreadNode> nodes;
 	std::vector<std::thread> threads;
 
@@ -22,16 +22,16 @@ int main(){
 	//
 	// later we will use a for loop or while loop to cycle through a 
 	// range of max_messages to collect statistical data on the threads
-	unsigned int max_messages = 50;
+	unsigned int max_messages = 30;
 
 
 	// create the number of nodes given by the graph and store them in
 	// a vector
-	// std::cout << "Nodes: " << graph.getNumNodes() << std::endl;
-	// std::cout << "Edges: " << graph.getNumEdges() << std::endl;
+	std::cout << "Nodes: " << graph.getNumNodes() << std::endl;
+	std::cout << "Edges: " << graph.getNumEdges() << std::endl;
 	for (uint16_t i = 0; i < graph.getNumNodes(); i++)
 	{
-		// std::cout << i << " - " << graph.nborsToString(i) << std::endl;
+		std::cout << i << " - " << graph.nborsToString(i) << std::endl;
 		ThreadNode temp(i, graph.getNeighbors(i), graph.getNumNodes(), max_messages);
 		nodes.push_back(temp);
 	}
