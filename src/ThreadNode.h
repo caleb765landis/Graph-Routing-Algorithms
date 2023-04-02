@@ -31,7 +31,6 @@ class ThreadNode
 		uint16_t _total_nodes;
 		MessagePacket _msg;
 		std::thread* node_thread;
-		int _numMessagesReceived;
 		std::vector<uint16_t> _neighbors;
 		static std::default_random_engine _generator;
 		static std::mutex _rand_mtx;

@@ -11,7 +11,7 @@ ThreadNode::ThreadNode()
 }
 
 ThreadNode::ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, uint16_t totalNodes)
-    : _ID(id), _neighbors(neighbors), _total_nodes(totalNodes), _numMessagesReceived(0)
+    : _ID(id), _neighbors(neighbors), _total_nodes(totalNodes)
 {}
 
 ThreadNode::~ThreadNode()
@@ -21,10 +21,6 @@ ThreadNode::~ThreadNode()
         delete node_thread;
         node_thread = nullptr;
     }
-    // std::vector<std::thread>::iterator it;
-    // for(it = node_threads.begin(); it < node_threads.end(); it++){
-    //     it->join();
-    // }
 }
 
 void ThreadNode::start_thread()
@@ -89,8 +85,7 @@ MessagePacket ThreadNode::createMessage()
 
 void ThreadNode::thread_recv()
 {
-    // printTestInfo(_ID, "thread_recv");
-    // Receive message from mailbox and store it in buffer
+    // If mailbox is empty do not receive anything
     if(mbox_empty(_ID))
         return;
     
@@ -105,9 +100,6 @@ void ThreadNode::thread_recv()
                         ") - dest - (" + std::to_string(temp.getDestination()) + ")";
     printTestInfo(_ID, test);
 
-    // Increase threadnode's receive count
-    _numMessagesReceived++;
-
     // Check if message's final destination is this thread
     // If this is final destination:
     if (temp.getDestination() == this->getID())
@@ -116,20 +108,19 @@ void ThreadNode::thread_recv()
         temp.timeStop();
 
         std::string test = "Node (" + std::to_string(_ID) + ") - Reached Destination - " +
-                            temp.getDataStr() + " - to - (" + std::to_string(temp.getReceiver()) +
-                            ") - dest - (" + std::to_string(temp.getDestination()) + ")";
+                            temp.getDataStr() + " - From - (" + std::to_string(temp.getSender()) +
+                            ") - transmitor - (" + std::to_string(temp.getTransmittor()) +
+                            ") - hop count - (" + std::to_string(temp.getHopCount()) +
+                            ") - time - (" + std::to_string(temp.getFinalTimeInterval()) +")";
         printTestInfo(_ID, test);
 
         _count_mtx.lock();
         _messages_recieved++;
         _count_mtx.unlock();
 
-        // Determine hop count and time that message has been in network
-        // _rand_mtx.lock();
-        // std::cout << _ID << " - dataString: " << temp <<" - Hop Count: " << temp.getHopCount() << " - Time Interval: " << temp.getFinalTimeInterval() << " - Dest: " << temp.getDestination()<< std::endl;
-        // _rand_mtx.unlock();
+        // TODO THIS IS WHERE WE NEED TO RETAIN THE INFROMATION OF THE FINAL DESTINATION FOR
+        // A MESSAGE
 
-        // Store these values in lists for finalHopCounts and finalTimeTraveledVals
 
     // If this is not final destination:
     } else {
@@ -157,9 +148,6 @@ void ThreadNode::thread_recv()
         // Send message to that chosen threadnode receiver's mailbox using _mailbox.mbox_send
         const char *dataPtr = dataStr.c_str();
         mbox_send(receiver, dataPtr, strlen(dataPtr));
-
-        // // Call thread_recv on chosen threadnode receiver
-        // _nodes->at(receiver).thread_recv();
     } // end if
 } // end thread_recv
 
@@ -272,6 +260,6 @@ uint16_t ThreadNode::rand_uniform(uint16_t min, uint16_t max) const
 void ThreadNode::printTestInfo(uint16_t id, std::string note) const
 {
     _rand_mtx.lock();
-    std::cout <<  id << " - " << note << std::endl;
+    std::cout << "Thread - "<< id << " - " << note << std::endl;
     _rand_mtx.unlock();
 }
