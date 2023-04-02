@@ -35,6 +35,7 @@ class ThreadNode
 		static std::default_random_engine _generator;
 		static std::mutex _rand_mtx;
 		static std::mutex _count_mtx;
+		static std::mutex _stream_mtx;
 
 		char _buffer[MAX];
 		static unsigned int _messages_sent;
@@ -58,6 +59,7 @@ class ThreadNode
 
 
 		void printTestInfo(uint16_t id, std::string note)const;
+		void printRunInfo() const;
 };
 
 #endif

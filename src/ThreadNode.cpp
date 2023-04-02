@@ -3,6 +3,7 @@
 std::default_random_engine ThreadNode::_generator;
 std::mutex ThreadNode::_rand_mtx;
 std::mutex ThreadNode::_count_mtx;
+std::mutex ThreadNode::_stream_mtx;
 unsigned int ThreadNode::_messages_sent = 0;
 unsigned int ThreadNode::_messages_recieved = 0;
 
@@ -47,6 +48,11 @@ void ThreadNode::run()
         _count_mtx.unlock();
     }
 
+    _count_mtx.lock();
+    std::string sent = "Messages sent: " + std::to_string(_messages_sent);
+    std::string rec = " - Messages recvd: " + std::to_string(_messages_recieved);
+    printTestInfo(_ID, sent + rec);
+    _count_mtx.unlock();
     // if(node_thread->joinable()){
     //     node_thread->join();
     //     delete node_thread;
@@ -103,10 +109,10 @@ void ThreadNode::thread_recv()
     // Create a temporary MessagePacket
     MessagePacket temp(_buffer);
 
-    std::string test = "Node (" + std::to_string(_ID) + ") - receiving - " +
-                        temp.getDataStr() + " - to - (" + std::to_string(temp.getReceiver()) +
-                        ") - dest - (" + std::to_string(temp.getDestination()) + ")";
-    printTestInfo(_ID, test);
+    // std::string test = "Node (" + std::to_string(_ID) + ") - receiving - " +
+    //                     temp.getDataStr() + " - to - (" + std::to_string(temp.getReceiver()) +
+    //                     ") - dest - (" + std::to_string(temp.getDestination()) + ")";
+    // printTestInfo(_ID, test);
 
     // Check if message's final destination is this thread
     // If this is final destination:
@@ -115,12 +121,12 @@ void ThreadNode::thread_recv()
         // Stop message timer
         temp.timeStop();
 
-        std::string test = "Node (" + std::to_string(_ID) + ") - Reached Destination - " +
+        std::string destinString = "Node (" + std::to_string(_ID) + ") - Reached Destination - " +
                             temp.getDataStr() + " - From - (" + std::to_string(temp.getSender()) +
                             ") - transmitor - (" + std::to_string(temp.getTransmittor()) +
                             ") - hop count - (" + std::to_string(temp.getHopCount()) +
                             ") - time - (" + std::to_string(temp.getFinalTimeInterval()) +")";
-        printTestInfo(_ID, test);
+        printTestInfo(_ID, destinString);
 
         _count_mtx.lock();
         _messages_recieved++;
@@ -148,10 +154,10 @@ void ThreadNode::thread_recv()
         // Get updated message data
         std::string dataStr = temp.getDataStr();
 
-        std::string test2 = "Node (" + std::to_string(_ID) + ") - Pass Potato - " +
+        std::string pass = "Node (" + std::to_string(_ID) + ") - Pass Potato - " +
                             temp.getDataStr() + " - to - (" + std::to_string(temp.getReceiver()) +
                             ") - dest - (" + std::to_string(temp.getDestination()) + ")";
-        printTestInfo(_ID, test2);
+        printTestInfo(_ID, pass);
 
         // Send message to that chosen threadnode receiver's mailbox using _mailbox.mbox_send
         const char *dataPtr = dataStr.c_str();
@@ -267,7 +273,12 @@ uint16_t ThreadNode::rand_uniform(uint16_t min, uint16_t max) const
 
 void ThreadNode::printTestInfo(uint16_t id, std::string note) const
 {
-    _rand_mtx.lock();
+    _stream_mtx.lock();
     std::cout << "Thread - "<< id << " - " << note << std::endl;
-    _rand_mtx.unlock();
+    _stream_mtx.unlock();
+}
+
+void ThreadNode::printRunInfo() const
+{
+
 }

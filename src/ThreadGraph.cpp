@@ -55,9 +55,21 @@ ThreadGraph::ThreadGraph(std::string filename)
 
 				// loop through everything after the ":" sign neglecting commas "," and store in the graph as
 				// integers
+				std::string node = "";
 				for(int i = 0; i < nbors.length(); i++){
-					if(nbors.at(i) != ','){
-						this->graph[std::stoi(nodeID)].push_back(uint16_t(nbors.at(i) - '0'));
+					if(nbors.at(i) != ',' && i != nbors.length() - 1){
+						node += nbors.at(i);
+						// this->graph[std::stoi(nodeID)].push_back(uint16_t(nbors.at(i) - '0'));
+					}
+					else if (i == nbors.length() - 1)
+					{
+						node += nbors.at(i);
+						this->graph[std::stoi(nodeID)].push_back(std::stoi(node));
+					}
+					else{
+						if(node.length() > 0)
+							this->graph[std::stoi(nodeID)].push_back(std::stoi(node));
+						node = "";
 					}
 				}
 			}
@@ -70,3 +82,14 @@ ThreadGraph::ThreadGraph(std::string filename)
 uint16_t ThreadGraph::getNumNodes() const {return this->numNodes;};
 uint16_t ThreadGraph::getNumEdges() const {return this->numEdges;};
 ThreadGraph::neighbors ThreadGraph::getNeighbors(uint16_t index) const {return this->graph.at(index);};
+std::string ThreadGraph::nborsToString(uint16_t index) const
+{
+	ThreadGraph::neighbors nbors = getNeighbors(index);
+	std::string info = "";
+	std::vector<uint16_t>::iterator it;
+	for(it = nbors.begin(); it < nbors.end(); it++){
+		info += std::to_string(*it) + ",";
+	}
+
+	return info;
+}

@@ -23,7 +23,8 @@ class ThreadGraph
 
 		uint16_t getNumNodes() const;
 		uint16_t getNumEdges() const;
-		neighbors getNeighbors(uint16_t) const;
+		neighbors getNeighbors(uint16_t index) const;
+		std::string nborsToString(uint16_t index) const;
 };
 
 #endif

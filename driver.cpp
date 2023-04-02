@@ -22,12 +22,16 @@ int main(){
 	//
 	// later we will use a for loop or while loop to cycle through a 
 	// range of max_messages to collect statistical data on the threads
-	unsigned int max_messages = 100;		
+	unsigned int max_messages = 50;
+
 
 	// create the number of nodes given by the graph and store them in
 	// a vector
+	// std::cout << "Nodes: " << graph.getNumNodes() << std::endl;
+	// std::cout << "Edges: " << graph.getNumEdges() << std::endl;
 	for (uint16_t i = 0; i < graph.getNumNodes(); i++)
 	{
+		// std::cout << i << " - " << graph.nborsToString(i) << std::endl;
 		ThreadNode temp(i, graph.getNeighbors(i), graph.getNumNodes(), max_messages);
 		nodes.push_back(temp);
 	}
