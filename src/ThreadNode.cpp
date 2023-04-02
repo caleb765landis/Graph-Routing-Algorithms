@@ -2,6 +2,8 @@
 
 std::default_random_engine ThreadNode::_generator;
 std::mutex ThreadNode::_rand_mtx;
+std::mutex ThreadNode::_count_mtx;
+unsigned int ThreadNode::MESSAGE_COUNT = 0;
 
 ThreadNode::ThreadNode()
 {
@@ -31,10 +33,11 @@ void ThreadNode::start_thread()
 
 void ThreadNode::run()
 {
-    while (true)
+    while (MESSAGE_COUNT < MAX_MESSAGES)
     {
         randSleep(50);
-        thread_send();
+        if(MESSAGE_COUNT < MAX_MESSAGES)
+            thread_send();
         thread_recv();
     }
 }
@@ -57,6 +60,10 @@ uint16_t ThreadNode::thread_send()
     printTestInfo(_ID, test);
 
     uint16_t bytes = mbox_send(msg.getReceiver(), dataPtr, strlen(dataPtr));
+
+    _count_mtx.lock();
+    MESSAGE_COUNT++;
+    _count_mtx.unlock();
 
     return bytes;
 }
