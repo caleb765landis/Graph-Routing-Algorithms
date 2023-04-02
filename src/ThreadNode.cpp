@@ -17,11 +17,11 @@ ThreadNode::ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, uint16_t to
 
 ThreadNode::~ThreadNode()
 {
-    if(node_thread->joinable()){
-        node_thread->join();
-        delete node_thread;
-        node_thread = nullptr;
-    }
+    // if(node_thread->joinable()){
+    //     node_thread->join();
+    //     delete node_thread;
+    //     node_thread = nullptr;
+    // }
 }
 
 void ThreadNode::start_thread()
@@ -49,8 +49,8 @@ void ThreadNode::run()
 
     // if(node_thread->joinable()){
     //     node_thread->join();
-    //     // delete node_thread;
-    //     // node_thread = nullptr;
+    //     delete node_thread;
+    //     node_thread = nullptr;
     // }
 }
 

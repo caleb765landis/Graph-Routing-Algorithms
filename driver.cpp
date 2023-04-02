@@ -15,6 +15,7 @@ int main(){
 	// Read from graph data file and store in ThreadGraph
 	ThreadGraph graph("graph/A10.dat");
 	std::vector<ThreadNode> nodes;
+	std::vector<std::thread> threads;
 
 	// the total number of messages allowed to be sent by all threads
 	// before cooling down and finishing at the same time
@@ -33,11 +34,30 @@ int main(){
 
 	// Each threadnode will have a thread that runs the threadnode's run method
 	// Cycle through the vecor and start each thread
+
+	// std::vector<ThreadNode>::iterator it;
+	// for(it = nodes.begin(); it < nodes.end(); it++){
+	// 	it->start_thread();
+	// }
+
 	std::vector<ThreadNode>::iterator it;
 	for(it = nodes.begin(); it < nodes.end(); it++){
-		it->start_thread();
+		std::thread t(&ThreadNode::run, &(*it));
+		threads.push_back(std::move(t));
 	}
 
-	std::this_thread::sleep_for(std::chrono::seconds(10));
+	std::vector<std::thread>::iterator th_it;
+	for(th_it = threads.begin(); th_it < threads.end(); th_it++){
+		if(th_it->joinable()){
+			th_it->join();
+		}
+		else{
+			// need to wait
+		}
+		
+	}
+
+
+	// std::this_thread::sleep_for(std::chrono::seconds(10));
 	return 0;
 }
