@@ -7,11 +7,12 @@ unsigned int ThreadNode::_messages_sent = 0;
 unsigned int ThreadNode::_messages_recieved = 0;
 
 ThreadNode::ThreadNode()
+: _ID(-1), _neighbors(0), _total_nodes(0), MAX_MESSAGES(0)
 {
 }
 
-ThreadNode::ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, uint16_t totalNodes)
-    : _ID(id), _neighbors(neighbors), _total_nodes(totalNodes)
+ThreadNode::ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, uint16_t totalNodes, unsigned int max)
+    : _ID(id), _neighbors(neighbors), _total_nodes(totalNodes), MAX_MESSAGES(max)
 {}
 
 ThreadNode::~ThreadNode()

@@ -12,13 +12,12 @@
 #include "MessagePacket.h"
 
 #define MAX 1024
-#define MAX_MESSAGES 10
 
 class ThreadNode
 {
 	public:
 		ThreadNode();
-		ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, uint16_t totalNodes);
+		ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, uint16_t totalNodes, unsigned int max);
 		~ThreadNode();
 
 		uint16_t getID() const;
@@ -32,12 +31,15 @@ class ThreadNode
 		MessagePacket _msg;
 		std::thread* node_thread;
 		std::vector<uint16_t> _neighbors;
+
 		static std::default_random_engine _generator;
 		static std::mutex _rand_mtx;
 		static std::mutex _count_mtx;
+
 		char _buffer[MAX];
 		static unsigned int _messages_sent;
 		static unsigned int _messages_recieved;
+		const unsigned int MAX_MESSAGES;
 
 		double rand_exponential(double mean) const;
 		uint16_t rand_uniform(uint16_t min, uint16_t max) const;
