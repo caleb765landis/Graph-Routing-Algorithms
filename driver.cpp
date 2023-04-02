@@ -34,20 +34,27 @@ int main(){
 
 	// Each threadnode will have a thread that runs the threadnode's run method
 	// This method will begin the random message writing and passing
-	for (int i = 0; i < graph.getNumNodes(); i++)
-	{
-		//std::cout << std::endl << i << " - thread:\n ";
-		std::thread t(&ThreadNode::run, &nodes.at(i));
-		threads.push_back(std::move(t));
-
+	std::cout << "After node creationg" << std::endl;
+	std::vector<ThreadNode>::iterator it;
+	for(it = nodes.begin(); it < nodes.end(); it++){
+		it->start_thread();
 	}
+
+
+	// for (int i = 0; i < graph.getNumNodes(); i++)
+	// {
+	// 	//std::cout << std::endl << i << " - thread:\n ";
+	// 	std::thread t(&ThreadNode::run, &nodes.at(i));
+	// 	threads.push_back(std::move(t));
+
+	// }
 
 	
-	std::vector<std::thread>::iterator it;
-	for(it = threads.begin(); it < threads.end(); it++)
-	{
-		it->join();
-	}
+	// std::vector<std::thread>::iterator it;
+	// for(it = threads.begin(); it < threads.end(); it++)
+	// {
+	// 	it->join();
+	// }
 
 	// join threads once all processes have finished
 

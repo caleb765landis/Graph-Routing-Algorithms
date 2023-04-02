@@ -22,11 +22,14 @@ class ThreadNode
 
 		uint16_t getID() const;
 
+		void start_thread();
+
 		void run();
 	private:
 		uint16_t _ID;
 		uint16_t _total_nodes;
 		MessagePacket _msg;
+		std::thread* node_thread;
 		int _numMessagesReceived;
 		std::vector<uint16_t> _neighbors;
 		static std::default_random_engine _generator;

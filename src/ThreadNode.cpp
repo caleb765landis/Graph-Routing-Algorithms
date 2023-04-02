@@ -13,6 +13,20 @@ ThreadNode::ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, uint16_t to
 
 ThreadNode::~ThreadNode()
 {
+    if(node_thread->joinable()){
+        node_thread->join();
+        delete node_thread;
+        node_thread = nullptr;
+    }
+    // std::vector<std::thread>::iterator it;
+    // for(it = node_threads.begin(); it < node_threads.end(); it++){
+    //     it->join();
+    // }
+}
+
+void ThreadNode::start_thread()
+{
+    node_thread = new std::thread(&ThreadNode::run, this);
 }
 
 void ThreadNode::run()
@@ -37,12 +51,10 @@ uint16_t ThreadNode::thread_send()
     // Set current time as start of keeping track of how long message is in network
     msg.timeStart();
 
-    _rand_mtx.lock();
-    std::cout << "Node (" << _ID << ") - sending - ";
-    std::cout << "M: " << m.c_str() << " - ";
-    std::cout << " - to - (" << msg.getReceiver() << ") ";
-    std::cout << " - dest - (" << msg.getDestination() << ")\n";
-    _rand_mtx.unlock();
+    std::string test = "Node (" + std::to_string(_ID) + ") - sending - " +
+                        m.c_str() + " - to - (" + std::to_string(msg.getReceiver()) +
+                        ") - dest - (" + std::to_string(msg.getDestination()) + ")";
+    printTestInfo(_ID, test);
 
     uint16_t bytes = mbox_send(msg.getReceiver(), dataPtr, strlen(dataPtr));
 
@@ -51,7 +63,7 @@ uint16_t ThreadNode::thread_send()
 
 MessagePacket ThreadNode::createMessage()
 {
-    printTestInfo(_ID, "Create Message");
+    // printTestInfo(_ID, "Create Message");
 
     uint16_t random_dest = createDestination(0, _total_nodes - 1);
     uint16_t random_recv = getRandomNeighbor(_ID);
@@ -62,19 +74,21 @@ MessagePacket ThreadNode::createMessage()
 
 void ThreadNode::thread_recv()
 {
-    printTestInfo(_ID, "thread_recv");
+    // printTestInfo(_ID, "thread_recv");
     // Receive message from mailbox and store it in buffer
     if(mbox_empty(_ID))
         return;
     
     int rbytes = mbox_recv(this->getID(), &_buffer, MAX);
 
-    std::string test = "In thread_recv for node " + std::to_string(getID()) + 
-                        ": \nBuffer: " + _buffer + " - Bytes - " + std::to_string(rbytes) + "\n";
-    printTestInfo(_ID, test);
 
     // Create a temporary MessagePacket
     MessagePacket temp(_buffer);
+
+    std::string test = "Node (" + std::to_string(_ID) + ") - receiving - " +
+                        temp.getDataStr() + " - to - (" + std::to_string(temp.getReceiver()) +
+                        ") - dest - (" + std::to_string(temp.getDestination()) + ")";
+    printTestInfo(_ID, test);
 
     // Increase threadnode's receive count
     _numMessagesReceived++;
@@ -86,10 +100,15 @@ void ThreadNode::thread_recv()
         // Stop message timer
         temp.timeStop();
 
+        std::string test = "Node (" + std::to_string(_ID) + ") - Reached Destination - " +
+                            temp.getDataStr() + " - to - (" + std::to_string(temp.getReceiver()) +
+                            ") - dest - (" + std::to_string(temp.getDestination()) + ")";
+        printTestInfo(_ID, test);
+
         // Determine hop count and time that message has been in network
-        _rand_mtx.lock();
-        std::cout << _ID << " - dataString: " << temp <<" - Hop Count: " << temp.getHopCount() << " - Time Interval: " << temp.getFinalTimeInterval() << " - Dest: " << temp.getDestination()<< std::endl;
-        _rand_mtx.unlock();
+        // _rand_mtx.lock();
+        // std::cout << _ID << " - dataString: " << temp <<" - Hop Count: " << temp.getHopCount() << " - Time Interval: " << temp.getFinalTimeInterval() << " - Dest: " << temp.getDestination()<< std::endl;
+        // _rand_mtx.unlock();
 
         // Store these values in lists for finalHopCounts and finalTimeTraveledVals
 
@@ -110,9 +129,11 @@ void ThreadNode::thread_recv()
 
         // Get updated message data
         std::string dataStr = temp.getDataStr();
-        _rand_mtx.lock();
-        std::cout << _ID << " - Updated dataStr: " << dataStr << std::endl;
-        _rand_mtx.unlock();
+
+        std::string test2 = "Node (" + std::to_string(_ID) + ") - Pass Potato - " +
+                            temp.getDataStr() + " - to - (" + std::to_string(temp.getReceiver()) +
+                            ") - dest - (" + std::to_string(temp.getDestination()) + ")";
+        printTestInfo(_ID, test2);
 
         // Send message to that chosen threadnode receiver's mailbox using _mailbox.mbox_send
         const char *dataPtr = dataStr.c_str();
@@ -124,7 +145,7 @@ void ThreadNode::thread_recv()
 } // end thread_recv
 
 uint16_t ThreadNode::passPotato(uint16_t transmittor, uint16_t destination){
-    printTestInfo(_ID, "passPotato");
+    // printTestInfo(_ID, "passPotato");
 
     std::vector<uint16_t>::const_iterator neighbor;
     uint16_t random_receiver = this->_ID;
@@ -231,7 +252,7 @@ uint16_t ThreadNode::rand_uniform(uint16_t min, uint16_t max) const
 
 void ThreadNode::printTestInfo(uint16_t id, std::string note) const
 {
-    // _rand_mtx.lock();
-    // std::cout << "\t\t" << id << " - " << note << std::endl;
-    // _rand_mtx.unlock();
+    _rand_mtx.lock();
+    std::cout <<  id << " - " << note << std::endl;
+    _rand_mtx.unlock();
 }
