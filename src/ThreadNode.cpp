@@ -3,7 +3,8 @@
 std::default_random_engine ThreadNode::_generator;
 std::mutex ThreadNode::_rand_mtx;
 std::mutex ThreadNode::_count_mtx;
-unsigned int ThreadNode::MESSAGE_COUNT = 0;
+unsigned int ThreadNode::_messages_sent = 0;
+unsigned int ThreadNode::_messages_recieved = 0;
 
 ThreadNode::ThreadNode()
 {
@@ -33,12 +34,19 @@ void ThreadNode::start_thread()
 
 void ThreadNode::run()
 {
-    while (MESSAGE_COUNT < MAX_MESSAGES)
+    bool sentFlag = true;
+    bool receiveFlag = true;
+    while (sentFlag || receiveFlag)
     {
         randSleep(50);
-        if(MESSAGE_COUNT < MAX_MESSAGES)
+        if(_messages_sent <= MAX_MESSAGES)
             thread_send();
         thread_recv();
+
+        _count_mtx.lock();
+        sentFlag = _messages_sent <= MAX_MESSAGES;
+        receiveFlag = _messages_recieved != _messages_sent;
+        _count_mtx.unlock();
     }
 }
 
@@ -62,7 +70,7 @@ uint16_t ThreadNode::thread_send()
     uint16_t bytes = mbox_send(msg.getReceiver(), dataPtr, strlen(dataPtr));
 
     _count_mtx.lock();
-    MESSAGE_COUNT++;
+    _messages_sent++;
     _count_mtx.unlock();
 
     return bytes;
@@ -111,6 +119,10 @@ void ThreadNode::thread_recv()
                             temp.getDataStr() + " - to - (" + std::to_string(temp.getReceiver()) +
                             ") - dest - (" + std::to_string(temp.getDestination()) + ")";
         printTestInfo(_ID, test);
+
+        _count_mtx.lock();
+        _messages_recieved++;
+        _count_mtx.unlock();
 
         // Determine hop count and time that message has been in network
         // _rand_mtx.lock();
