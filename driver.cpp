@@ -21,7 +21,7 @@ int main(){
 	//
 	// later we will use a for loop or while loop to cycle through a 
 	// range of max_messages to collect statistical data on the threads
-	unsigned int max_messages = 50;		
+	unsigned int max_messages = 100;		
 
 	// create the number of nodes given by the graph and store them in
 	// a vector
@@ -38,5 +38,6 @@ int main(){
 		it->start_thread();
 	}
 
+	std::this_thread::sleep_for(std::chrono::seconds(10));
 	return 0;
 }

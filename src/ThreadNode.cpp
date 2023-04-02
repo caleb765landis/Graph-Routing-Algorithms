@@ -38,6 +38,7 @@ void ThreadNode::run()
         randSleep(50);
         if(_messages_sent <= MAX_MESSAGES)
             thread_send();
+
         thread_recv();
 
         _count_mtx.lock();
@@ -45,6 +46,12 @@ void ThreadNode::run()
         receiveFlag = _messages_recieved != _messages_sent;
         _count_mtx.unlock();
     }
+
+    // if(node_thread->joinable()){
+    //     node_thread->join();
+    //     // delete node_thread;
+    //     // node_thread = nullptr;
+    // }
 }
 
 uint16_t ThreadNode::getID() const
