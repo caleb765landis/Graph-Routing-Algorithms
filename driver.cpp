@@ -13,7 +13,7 @@
 
 int main(){
 	// Read from graph data file and store in ThreadGraph
-	ThreadGraph graph("graph/A25.dat");
+	ThreadGraph graph("graph/A49.dat");
 	std::vector<ThreadNode> nodes;
 	std::vector<std::thread> threads;
 
@@ -22,7 +22,7 @@ int main(){
 	//
 	// later we will use a for loop or while loop to cycle through a 
 	// range of max_messages to collect statistical data on the threads
-	unsigned int max_messages = 30;
+	unsigned int max_messages = 15;
 
 
 	// create the number of nodes given by the graph and store them in
@@ -36,20 +36,16 @@ int main(){
 		nodes.push_back(temp);
 	}
 
-	// Each threadnode will have a thread that runs the threadnode's run method
-	// Cycle through the vecor and start each thread
 
-	// std::vector<ThreadNode>::iterator it;
-	// for(it = nodes.begin(); it < nodes.end(); it++){
-	// 	it->start_thread();
-	// }
-
+	// Use a thread for each of the nodes to use the nodes run function.
 	std::vector<ThreadNode>::iterator it;
 	for(it = nodes.begin(); it < nodes.end(); it++){
 		std::thread t(&ThreadNode::run, &(*it));
 		threads.push_back(std::move(t));
 	}
 
+	// std::this_thread::sleep_for(std::chrono::milliseconds(500));
+	// join the threads
 	std::vector<std::thread>::iterator th_it;
 	for(th_it = threads.begin(); th_it < threads.end(); th_it++){
 		if(th_it->joinable()){
@@ -60,6 +56,7 @@ int main(){
 		}
 		
 	}
+
 
 
 	// std::this_thread::sleep_for(std::chrono::seconds(10));
