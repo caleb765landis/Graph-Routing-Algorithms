@@ -19,20 +19,20 @@ struct analysis{
 
 int main(){
 	// Read from graph data file and store in ThreadGraph
-	ThreadGraph graph("graph/A10.dat");
+	ThreadGraph graph("graph/A25.dat");
 	std::vector<ThreadNode> nodes;						// Node objects
 	std::vector<std::thread> threads;					// Threads
 	std::queue<analysis> final_analysis;
 	typedef std::pair<unsigned int, double> threadAnalysis;
-	std::map<uint16_t, std::promise<threadAnalysis>> prms;
-	std::map<uint16_t, std::future<threadAnalysis>> ftrs;
+	std::map<uint16_t, std::promise<threadAnalysis>> prms;		// threads promise to send hop count and time
+	std::map<uint16_t, std::future<threadAnalysis>> ftrs;		// main waits for promises to be fulfilled
 
 	// the total number of messages allowed to be sent by all threads
 	// before cooling down and finishing at the same time
 	//
 	// later we will use a for loop or while loop to cycle through a 
 	// range of max_messages to collect statistical data on the threads
-	unsigned int max_messages = 30;
+	unsigned int max_messages = 100;
 
 
 	// create the number of nodes given by the graph and store them in
@@ -57,7 +57,7 @@ int main(){
 	}
 
 	// Makes main wait for each of the nodes to be joinable and collects
-	// the hopcount and time information.
+	// the hopcount and time information from each threads promise
 	for(int i = 0; i < graph.getNumNodes(); i++){
 		if(threads[i].joinable())
 			ftrs[i] = prms[i].get_future();
