@@ -3,6 +3,7 @@
 #define _THREAD_NODE_H
 
 #include <thread>
+#include <future>
 #include <vector>
 #include <random>
 #include <mutex>
@@ -15,15 +16,25 @@
 #define SLEEP 50
 #define COOL 50
 
+
+
 class ThreadNode
 {
 	public:
 		ThreadNode();
 		ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, uint16_t totalNodes, unsigned int max);
+		ThreadNode(const ThreadNode& other);
 		~ThreadNode();
 
 		uint16_t getID() const;
-		void run();
+		std::vector<uint16_t> getNbors() const;
+		uint16_t getTotNodes() const;
+		unsigned int getMaxMsgs() const;
+		unsigned int getHopCount() const;
+		double getTotalTime() const;
+		//std::promise<std::pair<unsigned int, double>> getPromise() const;
+
+		void run(std::promise<std::pair<unsigned int, double>> & prms);
 		// void start_thread();
 
 	private:

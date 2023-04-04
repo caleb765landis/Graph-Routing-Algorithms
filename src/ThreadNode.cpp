@@ -17,6 +17,10 @@ ThreadNode::ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, uint16_t to
     : _ID(id), _neighbors(neighbors), _total_nodes(totalNodes), MAX_MESSAGES(max), _total_hops(0), _total_time(0)
 {}
 
+ThreadNode::ThreadNode(const ThreadNode& other)
+    : _ID(other.getID()), _neighbors(other.getNbors()), _total_nodes(other.getTotNodes()), MAX_MESSAGES(other.getMaxMsgs()), _total_hops(other.getHopCount()), _total_time(other.getTotalTime())
+{}
+
 ThreadNode::~ThreadNode()
 {
     // if(node_thread->joinable()){
@@ -31,7 +35,7 @@ ThreadNode::~ThreadNode()
 //     node_thread = new std::thread(&ThreadNode::run, this);
 // }
 
-void ThreadNode::run()
+void ThreadNode::run(std::promise<std::pair<unsigned int, double>> & prms)
 {
     do {
         randSleep(SLEEP);
@@ -55,6 +59,8 @@ void ThreadNode::run()
     std::string hops = "Total Hops: " + std::to_string(_total_hops);
     std::string time = " - Total Time: " + std::to_string(_total_time);
     printTestInfo(_ID, hops + time);
+
+    prms.set_value({_total_hops, _total_time});
 }
 
 uint16_t ThreadNode::getID() const
@@ -291,11 +297,27 @@ uint16_t ThreadNode::rand_uniform(uint16_t min, uint16_t max) const
     return randNumber;
 }
 
+std::vector<uint16_t> ThreadNode::getNbors() const{
+    return _neighbors;
+}
+uint16_t ThreadNode::getTotNodes() const{
+    return _total_nodes;
+}
+unsigned int ThreadNode::getMaxMsgs() const{
+    return MAX_MESSAGES;
+}
+unsigned int ThreadNode::getHopCount() const{
+    return _total_hops;
+}
+double ThreadNode::getTotalTime() const{
+    return _total_time;
+}
+
 void ThreadNode::printTestInfo(uint16_t id, std::string note) const
 {
-    _stream_mtx.lock();
-    std::cout << "Thread - "<< id << " - " << note << std::endl;
-    _stream_mtx.unlock();
+    // _stream_mtx.lock();
+    // std::cout << "Thread - "<< id << " - " << note << std::endl;
+    // _stream_mtx.unlock();
 }
 
 void ThreadNode::printRunInfo() const
