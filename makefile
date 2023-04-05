@@ -6,7 +6,7 @@ FILES = driver.cpp src/mailbox.cc src/ThreadGraph.cpp src/ThreadNode.cpp src/Mes
 driver: driver.o mailbox.o
 	$(CXX) $(GFLAGS) -o driver $(OBJECTS)
 
-driver.o: driver.cpp threadgraph.o threadnode.o messagepacket.o mailbox.o
+driver.o: driver.cpp ThreadGraph.o ThreadNode.o MessagePacket.o mailbox.o
 	$(CXX) $(GFLAGS) -c driver.cpp
 
 ThreadGraph.o: src/ThreadGraph.h src/ThreadGraph.cpp
@@ -15,13 +15,13 @@ ThreadGraph.o: src/ThreadGraph.h src/ThreadGraph.cpp
 ThreadNode.o: src/ThreadNode.h src/ThreadNode.cpp
 	$(CXX) $(GFLAGS) -c src/ThreadNode.cpp
 
-MessagePacket.o: src/MessagePacket.h src/MessagePacket.cpp timeinterval.o
+MessagePacket.o: src/MessagePacket.h src/MessagePacket.cpp TimeInterval.o
 	$(CXX) $(GFLAGS) -c src/MessagePacket.cpp
 
 TimeInterval.o: src/TimeInterval.h src/TimeInterval.cpp
 	$(CXX) $(GFLAGS) -c src/TimeInterval.cpp
 
-mailbox.o: src/mbox.h src/mailbox.cc messagepacket.o
+mailbox.o: src/mbox.h src/mailbox.cc MessagePacket.o
 	$(CXX) $(GFLAGS) -c src/mailbox.cc
 
 clean:
