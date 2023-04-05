@@ -19,7 +19,7 @@ struct analysis{
 
 int main(){
 	// Read from graph data file and store in ThreadGraph
-	ThreadGraph graph("graph/A25.dat");
+	ThreadGraph graph("graph/A10.dat");
 	std::vector<ThreadNode> nodes;						// Node objects
 	std::vector<std::thread> threads;					// Threads
 	std::queue<analysis> final_analysis;
@@ -32,7 +32,7 @@ int main(){
 	//
 	// later we will use a for loop or while loop to cycle through a 
 	// range of max_messages to collect statistical data on the threads
-	unsigned int max_messages = 100;
+	unsigned int max_messages = 50;
 
 
 	// create the number of nodes given by the graph and store them in

@@ -315,9 +315,9 @@ double ThreadNode::getTotalTime() const{
 
 void ThreadNode::printTestInfo(uint16_t id, std::string note) const
 {
-    // _stream_mtx.lock();
-    // std::cout << "Thread - "<< id << " - " << note << std::endl;
-    // _stream_mtx.unlock();
+    _stream_mtx.lock();
+    std::cout << "Thread - "<< id << " - " << note << std::endl;
+    _stream_mtx.unlock();
 }
 
 void ThreadNode::printRunInfo() const
