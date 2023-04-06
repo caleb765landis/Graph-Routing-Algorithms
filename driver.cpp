@@ -19,7 +19,7 @@ struct analysis{
 
 int main(){
 	// Read from graph data file and store in ThreadGraph
-	unsigned int MAX_MESSAGES = 1000;
+	unsigned int MAX_MESSAGES = 500;
 	std::ofstream graphFile;
 	graphFile.open("Analysis.csv");
 	graphFile << "Graph, Nodes, Edges, Hops, Time, \n";
@@ -95,6 +95,7 @@ int main(){
 					<< graph.getNumEdges() << ", "
 					<< totalHops << ", " 
 					<< totalTime << ", \n";
+
 		ThreadNode::_messages_sent = 0;
 		ThreadNode::_messages_recieved = 0;
 		graphNumber++;
@@ -102,7 +103,7 @@ int main(){
 	}
 
 	graphFile.close();
-	MAX_MESSAGES += 5;
+	// MAX_MESSAGES += 5;
 
 
 	return 0;
