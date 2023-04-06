@@ -42,6 +42,9 @@ void ThreadNode::run(std::promise<std::pair<unsigned int, double>> & prms)
         if(_send_flag){
             thread_send();
         }
+        else{
+            printRunInfo();
+        }
 
         thread_recv();
 
@@ -50,15 +53,8 @@ void ThreadNode::run(std::promise<std::pair<unsigned int, double>> & prms)
         _recv_flag = _messages_recieved != _messages_sent;
         _count_mtx.unlock();
 
-        // _stream_mtx.lock();
-        // std::cout << _ID << " - Sent - " << _messages_sent << " - Received - " << _messages_recieved << std::endl;
-        // _stream_mtx.unlock();
+        // printRunInfo();
     }    while (_send_flag || _recv_flag);
-
-
-    std::string hops = "Total Hops: " + std::to_string(_total_hops);
-    std::string time = " - Total Time: " + std::to_string(_total_time);
-    printTestInfo(_ID, hops + time);
 
     prms.set_value({_total_hops, _total_time});
 }
@@ -144,12 +140,11 @@ void ThreadNode::thread_recv()
 
         _total_hops += temp.getHopCount();
         _total_time += temp.getFinalTimeInterval();
+
         _count_mtx.lock();
         _messages_recieved++;
         _count_mtx.unlock();
 
-        // TODO THIS IS WHERE WE NEED TO RETAIN THE INFROMATION OF THE FINAL DESTINATION FOR
-        // A MESSAGE
 
 
     // If this is not final destination:
@@ -315,12 +310,41 @@ double ThreadNode::getTotalTime() const{
 
 void ThreadNode::printTestInfo(uint16_t id, std::string note) const
 {
-    _stream_mtx.lock();
-    std::cout << "Thread - "<< id << " - " << note << std::endl;
-    _stream_mtx.unlock();
+    // _stream_mtx.lock();
+    // std::cout << "Thread - "<< id << " - " << note << std::endl;
+    // _stream_mtx.unlock();
 }
 
 void ThreadNode::printRunInfo() const
 {
+/* Code written by leemes, user: 592323 published by stack overflow
+    Ref: https://stackoverflow.com/questions/14539867/how-to-display-a-progress-indicator-in-pure-c-c-cout-printf*/
 
+    // if(_ID == 0){
+    //     _count_mtx.lock();
+    //     float recvProgress = (float)_messages_recieved / _messages_sent;
+    //     int barWidth = 70;
+    //     _count_mtx.unlock();
+
+    //     // while (recvProgress < 1.0) {
+
+    //     std::cout << "Messages Received: [";
+    //     int pos = barWidth * recvProgress;
+
+    //     _stream_mtx.lock();
+    //     for (int i = 0; i < barWidth; ++i) {
+    //         if (i < pos) std::cout << "=";
+    //         else if (i == pos) std::cout << ">";
+    //         else std::cout << " ";
+    //     }
+    //     std::cout << "] " << int(recvProgress * 100.0) << " %\r";
+    //     //std::cout.clear();
+    //     std::cout.flush();
+
+    //     if(int(recvProgress*100) == 100)
+    //         std::cout << std::endl; // << "--------------- Progress Done --------------------" << std::endl;
+
+    //     _stream_mtx.unlock();
+
+    // }
 }

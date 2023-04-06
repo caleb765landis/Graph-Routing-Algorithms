@@ -26,6 +26,9 @@ class ThreadNode
 		ThreadNode(const ThreadNode& other);
 		~ThreadNode();
 
+		static unsigned int _messages_sent;
+		static unsigned int _messages_recieved;
+
 		uint16_t getID() const;
 		std::vector<uint16_t> getNbors() const;
 		uint16_t getTotNodes() const;
@@ -51,9 +54,7 @@ class ThreadNode
 		static std::mutex _time_mtx;
 
 		char _buffer[MAX];
-		static unsigned int _messages_sent;
-		static unsigned int _messages_recieved;
-		const unsigned int MAX_MESSAGES;
+		unsigned int MAX_MESSAGES;
 		unsigned int _total_hops;
 		double _total_time;
 		bool _send_flag = true;
