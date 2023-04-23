@@ -47,8 +47,12 @@ void ThreadNode::run()
     do {
         ThreadNode::randSleep(SLEEP);
 
+        // checks to see if all messages have been received.  If there are any messages
+        // still floating around then all threads need to keep running or there will
+        // be an infinite loop
         _recv_flag = hasReceivedAllMsgs();
 
+        // if time is up then stop sending messages
         if(!times_up){
             _thread_mtx.lock();
             times_up = _end_time <= high_resolution_clock::now();
@@ -57,55 +61,38 @@ void ThreadNode::run()
             thread_send(); 
         }
 
+        // always receive
         thread_recv();
-        if(times_up)
-            printTestInfo(getID(), "running....", _recv_flag, -1, times_up, -1);
+        // if(times_up)
+        //     printTestInfo(getID(), "running....", _recv_flag, -1, times_up, -1);
 
     } while (!times_up || _recv_flag);
 }
 
 uint16_t ThreadNode::passPotato(uint16_t transmittor, uint16_t destination)
 {
-    printTestInfo(getID(), "passPotato", -1, -1, -1, -1);
-    // printTestInfo(_ID, "passPotato");
-    // std::vector<uint16_t>::const_iterator neighbor;
-    // uint16_t random_receiver = getID();
+    // printTestInfo(getID(), "passPotato", -1, -1, -1, -1);
 
-    // // if the final destination is in the neighbors of this
-    // // node then we can send it directly to it's destination
-    // // without running a random number
-    // for(neighbor = getNbors().begin(); neighbor < getNbors().end(); neighbor++){
-    //     if(*neighbor == destination){
-    //         random_receiver = *neighbor;
-    //         break;
-    //     }
-    // }
-
-    // // if the destination is not in the path of neighbors then the
-    // // random receiver should still be this nodes ID and will then
-    // // find a random receiver for the message
-    // if(random_receiver == this->getID()){
-    //     // find a random neighbor and set equal to destination
-    //     random_receiver = getRandomNeighbor(transmittor, destination);
-    // }
-
+    /* TODO can put more code in here for specifically passing a potato
+        Whatever we can move from thread_send where we are passing the 
+        potato can go here
+    */
     return getRandomNeighbor(transmittor, destination);
 }
 
 uint16_t ThreadNode::thread_send()
 {
-    // if(!_send_flag)
-    //     return -1;
-
     // printTestInfo(_ID, "thread_send");
+    // create a message and 
     MessagePacket msg = createMessage();
     std::string m = msg.getDataStr();
 
-
+    // use the mailbox to send the message
     const char *dataPtr = m.c_str();
     printTestInfo(getID(), "Sending", getID(), getID(), msg.getReceiver(), msg.getDestination());
     uint16_t bytes = mbox_send(msg.getReceiver(), dataPtr, strlen(dataPtr));
 
+    // increment the total amount of messages sent
     incrMsgSent(1);
 
     return bytes;
@@ -114,6 +101,8 @@ uint16_t ThreadNode::thread_send()
 MessagePacket ThreadNode::createMessage()
 {
     // printTestInfo(getID(), "createMessage", -1, -1, -1, -1);
+    // create a message and get a random neighbor to send that
+    // message to
     uint16_t random_dest = createDestination(0, getTotalNodes() - 1);
     uint16_t random_recv = getRandomNeighbor(getID(), random_dest);
     MessagePacket msg(getID(), random_dest, random_recv);
@@ -151,6 +140,8 @@ uint16_t ThreadNode::createDestination(uint16_t min, uint16_t max) const
 uint16_t ThreadNode::getRandomNeighbor(uint16_t prevSender, uint16_t destination) const
 {
     // printTestInfo(getID(), "getRandomNeighbor", -1, -1, -1, -1);
+    
+    /* First check to see if the destination is one of this nodes neighbors **/
     uint16_t random_recv = getID();
     std::vector<uint16_t>::const_iterator neighbor;
     for(neighbor = getNbors().begin(); neighbor < getNbors().end(); neighbor++){
@@ -160,6 +151,10 @@ uint16_t ThreadNode::getRandomNeighbor(uint16_t prevSender, uint16_t destination
         }
     }
 
+    /* If the random receiver is still this nodes ID then we know the destination
+        is not among this nodes neighbors.  Get a randomNeighbor from the random
+        nodes class
+    */
     if(random_recv == this->getID()){
         // find a random neighbor and set equal to destination
         random_recv = RandomNodes::getRandomNeighbor(prevSender, getNbors(), _generator);
@@ -219,6 +214,8 @@ void ThreadNode::thread_recv()
 void ThreadNode::incrMsgSent(unsigned int incr)
 {
     // printTestInfo(getID(), "incrMsgSent", -1, -1, -1, -1);
+
+    // increment the messages by the increement variable
     _thread_mtx.lock();
     this->_messages_sent += incr;
     _thread_mtx.unlock();
@@ -227,6 +224,8 @@ void ThreadNode::incrMsgSent(unsigned int incr)
 void ThreadNode::incrMsgRecieved(unsigned int incr)
 {
     // printTestInfo(getID(), "incrMsgReceived", -1, -1, -1, -1);
+
+    // increment the messages received by the increment variable
     _thread_mtx.lock();
     this->_messages_recieved += incr;
     _thread_mtx.unlock();
@@ -236,6 +235,7 @@ void ThreadNode::randSleep(double mean)
 {
     // printTestInfo(getID(), "randSleep", -1, -1, -1, -1);
 
+    // choose a random number for the node to sleep
     _thread_mtx.lock();
     int randNumber = (int)(RandomNodes::rand_exponential(mean, _generator) * 1000);
     _thread_mtx.unlock();
@@ -247,6 +247,7 @@ void ThreadNode::randCool(double mean)
 {
     // printTestInfo(getID(), "randCool", -1, -1, -1, -1);
 
+    // choose a random number for the node to cool
     _thread_mtx.lock();
     int randNumber = (int)(RandomNodes::rand_exponential(mean, _generator) * 1000);
     _thread_mtx.unlock();
@@ -261,27 +262,19 @@ void ThreadNode::recordMessage(MessagePacket msg)
     msg.timeStop();
     _thread_mtx.unlock();
 
+    // record the messages hops and time
     _total_hops += msg.getHopCount();
     _total_time += msg.getFinalTimeInterval();
 
 }
-
-// bool ThreadNode::canSend() const
-// {
-//     bool noMoreSends;
-
-//     _thread_mtx.lock();
-//     noMoreSends = _messages_sent <= getMaxMsgs();
-//     _thread_mtx.unlock();
-
-//     return noMoreSends;
-// }
 
 bool ThreadNode::hasReceivedAllMsgs() const
 {
     // printTestInfo(getID(), "hasReceivedAllMsgs", -1, -1, -1, -1);
     bool allMsgsReceived;
 
+    // check to see if the number of messages received matches the number
+    // of messages sent
     _thread_mtx.lock();
     allMsgsReceived = _messages_recieved != _messages_sent;
     _thread_mtx.unlock();
@@ -291,6 +284,7 @@ bool ThreadNode::hasReceivedAllMsgs() const
 
 void ThreadNode::printTestInfo(uint16_t id, std::string action, uint16_t sender, uint16_t trans, uint16_t recv, uint16_t dest) const
 {
+    // print test information for depugging
     _thread_mtx.lock();
     std::cout << "Thread - "<< id << " - " << action 
             << " - Sender - " << sender << " - Transmittor - " << trans

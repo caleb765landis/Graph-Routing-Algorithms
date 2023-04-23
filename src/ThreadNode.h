@@ -1,7 +1,10 @@
 #ifndef _THREAD_NODE_H
 #define _THREAD_NODE_H
 
+#include <thread>
+#include <mutex>
 #include "Node.h"
+#include "RandomNodes.h"
 
 /* 
 	TODO: Need to change the Max message implementation to a timed limit implementation
@@ -70,11 +73,23 @@ class ThreadNode : public Node
 		static std::mutex _stream_mtx;
 
 		uint16_t passPotato(uint16_t transmittor, uint16_t destination);
+
+		/*	TODO these are some of the required pheromone functions not developed*/
 		uint16_t findTrail(uint16_t transmitt, uint16_t destination);
 		void updatePheromone();
 
 		uint16_t thread_send();
 		void thread_recv();
+
+		// function pointer for choosing how to pass the message
+		// will replace the two functions above
+		// 
+		// typedef uint16_t(*passingAlgorithm)(uint16_t, uint16_t);
+		// uint16_t thread_send(passingAlgorithm alg);
+		// void thread_recv(passingAlgorithm alg);
+
+
+
 		void incrMsgSent(unsigned int incr);
 		void incrMsgRecieved(unsigned int incr);
 		void recordMessage(MessagePacket msg);
