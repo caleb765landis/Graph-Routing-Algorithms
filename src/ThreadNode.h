@@ -1,83 +1,95 @@
-
 #ifndef _THREAD_NODE_H
 #define _THREAD_NODE_H
 
-#include <thread>
-#include <future>
-#include <vector>
-#include <random>
-#include <mutex>
-#include <stdint.h>
-#include <cstdlib>
-#include "mbox.h"
-#include "MessagePacket.h"
+#include "Node.h"
+
+/* 
+	TODO: Need to change the Max message implementation to a timed limit implementation
+	
+	Current Implementation: Threads all have a static total messages that can be sent
+	once the maximum number of messages sent is reached the threads stop sending
+	messages and wait until all messages are recieved.  They wait so that they can
+	all finish at the same time.
+
+		Implementation Functions:
+			run()
+			thread_send()
+			thread_recv()
+
+		variables used in current implementation:
+			_messages_sent
+			_messages_recieved
+			MAX_MESSAGES
+			_send_flag
+			_recv_flag
+			_count_mtx
+	
+	New Implementation:  Needs to use a time limit for how long the messages send
+	messages.  Need to probably keep the recieved message flags to make sure messages
+	are not still moving through the graph before the threads join
+*/
 
 #define MAX 1024
 #define SLEEP 50
 #define COOL 50
 
+using namespace std::chrono;
 
-
-class ThreadNode
+class ThreadNode : public Node
 {
 	public:
 		ThreadNode();
-		ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, uint16_t totalNodes, unsigned int max);
+		ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, uint16_t totalNodes, double duration);
+		ThreadNode(uint16_t id, std::map<uint16_t, double> edges, uint16_t totalNodes, double duration);
 		ThreadNode(const ThreadNode& other);
 		~ThreadNode();
 
+		void run();
+		bool getSendFlag() const;
+		bool getRecvFlag() const;
+
+		// unsigned int getMaxMsgs() const;
+		// unsigned int getHopCount() const;
+		// double getTotalTime() const;
+
+	private:
+		TimeInterval _thread_start_time;
+		time_point<high_resolution_clock> _end_time;
+		unsigned int _duration;
+
+		char _buffer[MAX];
+		bool _send_flag;
+		bool _recv_flag;
+
+		unsigned int MAX_MESSAGES;
 		static unsigned int _messages_sent;
 		static unsigned int _messages_recieved;
 
-		uint16_t getID() const;
-		std::vector<uint16_t> getNbors() const;
-		uint16_t getTotNodes() const;
-		unsigned int getMaxMsgs() const;
-		unsigned int getHopCount() const;
-		double getTotalTime() const;
-		//std::promise<std::pair<unsigned int, double>> getPromise() const;
-
-		void run(std::promise<std::pair<unsigned int, double>> & prms);
-		// void start_thread();
-
-	private:
-		uint16_t _ID;
-		uint16_t _total_nodes;
-		MessagePacket _msg;
-		// std::thread* node_thread;
-		std::vector<uint16_t> _neighbors;
-
 		static std::default_random_engine _generator;
-		static std::mutex _rand_mtx;
-		static std::mutex _count_mtx;
+		static std::mutex _thread_mtx;
 		static std::mutex _stream_mtx;
-		static std::mutex _time_mtx;
 
-		char _buffer[MAX];
-		unsigned int MAX_MESSAGES;
-		unsigned int _total_hops;
-		double _total_time;
-		bool _send_flag = true;
-		bool _recv_flag = true;
+		uint16_t passPotato(uint16_t transmittor, uint16_t destination);
+		uint16_t findTrail(uint16_t transmitt, uint16_t destination);
+		void updatePheromone();
 
-		double rand_exponential(double mean) const;
-		uint16_t rand_uniform(uint16_t min, uint16_t max) const;
-
-		void thread_recv();
 		uint16_t thread_send();
+		void thread_recv();
+		void incrMsgSent(unsigned int incr);
+		void incrMsgRecieved(unsigned int incr);
+		void recordMessage(MessagePacket msg);
+
+		uint16_t getRandomNeighbor(uint16_t prevSender, uint16_t destingation) const;
+		uint16_t createDestination(uint16_t min, uint16_t max) const;
+		MessagePacket createMessage();
+
+		// bool canSend() const;
+		bool hasReceivedAllMsgs() const;
 
 		void randSleep(double mean);
 		void randCool(double mean);
 
-		uint16_t passPotato(uint16_t transmittor, uint16_t destination);
-		uint16_t getRandomNeighbor(uint16_t prevSender) const;
-		uint16_t createDestination(uint16_t min, uint16_t max) const;
-
-		MessagePacket createMessage();
-
-
-		void printTestInfo(uint16_t id, std::string note)const;
-		void printRunInfo() const;
+		void printTestInfo(uint16_t id, std::string action, uint16_t sender, uint16_t trans, uint16_t recv, uint16_t destination) const;
 };
 
 #endif
