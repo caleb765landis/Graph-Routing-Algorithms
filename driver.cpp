@@ -17,21 +17,115 @@ struct analysis{
 	double time;
 };
 
-int main(){
-	// Read from graph data file and store in ThreadGraph
-	unsigned int MAX_MESSAGES = 500;
-	std::ofstream graphFile;
+analysis analyzeResults(std::vector<ThreadNode> nodes);
+void createNodes(std::vector<ThreadNode> &nodes, ThreadGraph graph, unsigned int duration);
+void runThreads(std::vector<std::thread*> &t, std::vector<ThreadNode> &nodes);
+void joinThreads(std::vector<std::thread*> &threads);
 
-	graphFile.open("Analysis.csv");
-	graphFile << "Graph, Nodes, Edges, Hops, Node-Edge Ratio, Time, \n";
+int main(int argc, char *argv[]){
+
+	double optionD = 10; 					// <-- TODO get value from main arguments
+	char optionR[] = {'h','o','t'}; 		// <-- TODO get value from main arguments
+	std::string filename = "graph/A10.dat";	// <-- TODO get value from main arguments
+
+	// output stream for storing the graphs analysis
+	std::ofstream analysisFile;
+	analysisFile.open("Analysis.csv");
+	analysisFile << "Graph, Nodes, Edges, Hops, Node-Edge Ratio, Time, \n";
+
+	/*
+		Beginning work on deciding which algorithm to use but I am not
+		familiar with polymorphism and would like to be ambiguous for
+		selecting which class to use.
+
+		If you all have an idea on how to implement this let me know.
+	*/
+	if(strcmp(optionR, "hot") == 0){
+
+	}
+	else if(strcmp(optionR, "ant") == 0){
+
+	}
+
+	ThreadGraph graph(filename);
+
+	std::vector<ThreadNode> nodes;			// Node objects
+	std::vector<std::thread*> threads;		// Threads
+
+	std::cout << "\nTest - " << filename << " - duration - " << optionD << "s"<< std::endl;
+
+	createNodes(nodes, graph, optionD);
+	// these two functions work with both types of nodes
+	runThreads(threads, nodes);
+	joinThreads(threads);
+	analysis results = analyzeResults(nodes);
+
+	// print the totals for the graph and reset the static counting variables for the
+	// group of threads.
+	std::cout 	<< "Graph (" << filename 
+				<< ") - Total Hops - " << results.hops 
+				<< " - Total Time - " << results.time << std::endl;
+	
+	analysisFile << filename << ", "
+				<< graph.getNumNodes() << ", "
+				<< graph.getNumEdges() << ", "
+				<< (double)graph.getNumEdges() / graph.getNumNodes() << ", "
+				<< results.hops << ", " 
+				<< results.time << ", \n";
 
 
-	unsigned int graphNumber = 10;
-	while(graphNumber <= 50)
+
+	analysisFile.close();
+
+
+	return 0;
+}
+
+void createNodes(std::vector<ThreadNode> &nodes, ThreadGraph graph, unsigned int duration)
+{
+	for (uint16_t i = 0; i < graph.getNumNodes(); i++)
 	{
-		// std::cout << "Graph - " << graphNumber << std::endl;
-		std::string gFileName = "graph/A" + std::to_string(graphNumber) + ".dat";
-		ThreadGraph graph(gFileName);
+		ThreadNode temp(i, graph.getNeighbors(i), graph.getNumNodes(), duration);
+		nodes.push_back(temp);
+	}
+}
+
+void runThreads(std::vector<std::thread*> &threads, std::vector<ThreadNode> &nodes)
+{
+	// Use a thread for each of the nodes to use the nodes run function.
+	std::vector<ThreadNode>::iterator it;
+	for(it = nodes.begin(); it != nodes.end(); it++){
+		threads.push_back(std::move(new std::thread(&ThreadNode::run, &(*it))));
+	}
+
+}
+
+void joinThreads(std::vector<std::thread*> &threads)
+{
+	// Makes main wait for each of the nodes to be joinable 
+	for(int i = 0; i < threads.size(); i++){
+		if(threads[i]->joinable())
+			threads[i]->join();
+			delete threads[i];
+			threads[i] = nullptr;
+	}
+
+}
+
+analysis analyzeResults(std::vector<ThreadNode> nodes)
+{
+	// loop for storing the values for the total hopcount and total time
+	// also prints each nodes hopcount and time to completion
+	analysis a;
+	for(int i = 0; i < nodes.size(); i++){
+		std::pair<unsigned int, double> p = {nodes[i].getHopCount(), nodes[i].getTotalTime()};
+		a.hops += p.first;
+		a.time += p.second;
+		std::cout << "Node (" << i << ") - Hop Count - " << a.hops << " - Time - " << a.time << std::endl;
+	}
+
+	return a;
+}
 
 		// std::string analFileName = "analysis/A" + std::to_string(graphNumber) + ".csv";
 		// std::ofstream analFile;
@@ -40,90 +134,3 @@ int main(){
 		// analFile << "Nodes: ," << graph.getNumNodes() << ",\n";
 		// analFile << "Edges: ," << graph.getNumEdges() << ",\n";
 		// analFile << "Messages, Hops, Time\n";
-
-		// while(MAX_MESSAGES <= 500)
-		// {
-			std::vector<ThreadNode> nodes;						// Node objects
-			std::vector<std::thread> threads;					// Threads
-			std::queue<analysis> final_analysis;
-			typedef std::pair<unsigned int, double> threadAnalysis;
-			std::map<uint16_t, std::promise<threadAnalysis>> prms;		// threads promise to send hop count and time
-			std::map<uint16_t, std::future<threadAnalysis>> ftrs;		// main waits for promises to be fulfilled
-
-			// the total number of messages allowed to be sent by all threads
-			// before cooling down and finishing at the same time
-			//
-			// later we will use a for loop or while loop to cycle through a 
-			// range of max_messages to collect statistical data on the threads
-			std::cout << "\nTest - " << gFileName << " - Messages - " << MAX_MESSAGES << std::endl;
-
-			// create the number of nodes given by the graph and store them in
-			// a vector
-			// std::cout << "Nodes: " << graph.getNumNodes() << std::endl;
-			// std::cout << "Edges: " << graph.getNumEdges() << std::endl;
-			for (uint16_t i = 0; i < graph.getNumNodes(); i++)
-			{
-				// std::cout << i << " - " << graph.nborsToString(i) << std::endl;
-				ThreadNode temp(i, graph.getNeighbors(i), graph.getNumNodes(), MAX_MESSAGES);
-				nodes.push_back(temp);
-			}
-
-			// Use a thread for each of the nodes to use the nodes run function.
-			uint16_t index = 0;
-			std::vector<ThreadNode>::iterator it;
-			for(it = nodes.begin(); it != nodes.end(); it++){
-				std::thread t(&ThreadNode::run, &(*it), std::ref(prms[index]));
-				threads.push_back(std::move(t));
-				index++;
-			}
-
-			// Makes main wait for each of the nodes to be joinable and collects
-			// the hopcount and time information from each threads promise
-			for(int i = 0; i < graph.getNumNodes(); i++){
-				if(threads[i].joinable())
-					ftrs[i] = prms[i].get_future();
-					threads[i].join();
-			}
-
-
-			// loop for storing the values for the total hopcount and total time
-			// also prints each nodes hopcount and time to completion
-			unsigned int totalHops = 0;
-			double totalTime = 0;
-			for(int i = 0; i < graph.getNumNodes(); i++){
-				std::pair<unsigned int, double> a = ftrs[i].get();
-				totalHops += a.first;
-				totalTime += a.second;
-				std::cout << "Node (" << i << ") - Hop Count - " << a.first << " - Time - " << a.second << std::endl;
-			}
-
-			// print the totals for the graph and reset the static counting variables for the
-			// group of threads.
-			std::cout << "Graph (A" << std::to_string(graphNumber) << ") - Total Hops - " << totalHops << " - Total Time - " << totalTime << std::endl;
-			
-			graphFile << "A" + std::to_string(graphNumber) << ", "
-						<< graph.getNumNodes() << ", "
-						<< graph.getNumEdges() << ", "
-						<< (double)graph.getNumEdges() / graph.getNumNodes() << ", "
-						<< totalHops << ", " 
-						<< totalTime << ", \n";
-
-			// analFile << MAX_MESSAGES << ", " << totalHops << ", " << totalTime << ", \n";
-
-			ThreadNode::_messages_sent = 0;
-			ThreadNode::_messages_recieved = 0;
-
-			// MAX_MESSAGES += 5;
-
-		// }
-		graphNumber++;
-
-		// analFile.close();
-		// MAX_MESSAGES = 5;
-	}
-
-	graphFile.close();
-
-
-	return 0;
-}
