@@ -24,7 +24,7 @@ void joinThreads(std::vector<std::thread*> &threads);
 
 int main(int argc, char *argv[]){
 
-	double optionD = 10; 					// <-- TODO get value from main arguments
+	double optionD = 5; 					// <-- TODO get value from main arguments
 	char optionR[] = {'h','o','t'}; 		// <-- TODO get value from main arguments
 	std::string filename = "graph/A10.dat";	// <-- TODO get value from main arguments
 

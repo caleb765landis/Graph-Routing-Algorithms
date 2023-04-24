@@ -92,22 +92,16 @@ int MailBox::recv(uint16_t msgID, void *packet, int max){
 	// critical section
 	std::unique_lock<std::mutex> lk(_mtx[msgID]);
 	bool empty = _mailboxes[msgID].empty();
+	std::cv_status timedOut = cvs[msgID].wait_for(lk, std::chrono::milliseconds(200));
+	// bool timedOut = cvs[msgID].wait_for(lk, std::chrono::milliseconds(200), [empty]{return !empty;});
 
-
-	cvs[msgID].wait_for(lk, std::chrono::milliseconds(100) ,[empty]{return !empty;});
-
-	// copy the message at msgID into the buffer and then pop()
-	// the message from the queue
-	// std::cout << msgID << " - MAILBOX RECV - IN - " << _mailboxes[msgID].front().content << std::endl;
-
-	strcpy((char*)packet, _mailboxes[msgID].front().content);
-	// std::cout << msgID << " - MAILBOX RECV - OUT - " << (char*)packet << std::endl;
-	
-	free(_mailboxes[msgID].front().content);
-	_mailboxes[msgID].pop();
-
-	// get the size of the packet
-	numBytes = sizeof(packet);
+	if(timedOut == std::cv_status::no_timeout)
+	{
+		strcpy((char*)packet, _mailboxes[msgID].front().content);	
+		free(_mailboxes[msgID].front().content);
+		_mailboxes[msgID].pop();
+		numBytes = sizeof(packet);
+	}
 
 	return numBytes;
 }

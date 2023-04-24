@@ -3,6 +3,7 @@
 
 #include <thread>
 #include <mutex>
+#include <condition_variable>
 #include "Node.h"
 #include "RandomNodes.h"
 
@@ -33,8 +34,8 @@
 */
 
 #define MAX 1024
-#define SLEEP 50
-#define COOL 50
+#define SLEEP 100000
+#define COOL 1000
 
 using namespace std::chrono;
 
@@ -42,8 +43,8 @@ class ThreadNode : public Node
 {
 	public:
 		ThreadNode();
-		ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, uint16_t totalNodes, double duration);
-		ThreadNode(uint16_t id, std::map<uint16_t, double> edges, uint16_t totalNodes, double duration);
+		ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, uint16_t totalNodes, unsigned int duration);
+		ThreadNode(uint16_t id, std::map<uint16_t, double> edges, uint16_t totalNodes, unsigned int duration);
 		ThreadNode(const ThreadNode& other);
 		~ThreadNode();
 
@@ -57,29 +58,32 @@ class ThreadNode : public Node
 
 	private:
 		TimeInterval _thread_start_time;
+		static time_point<high_resolution_clock> _thread_start_t;
 		time_point<high_resolution_clock> _end_time;
 		unsigned int _duration;
 
 		char _buffer[MAX];
 		bool _send_flag;
 		bool _recv_flag;
+		static bool _stopRecieving;
 
-		unsigned int MAX_MESSAGES;
-		static unsigned int _messages_sent;
-		static unsigned int _messages_recieved;
+		static int _messages_sent;
+		static int _messages_recieved;
 
 		static std::default_random_engine _generator;
 		static std::mutex _thread_mtx;
-		static std::mutex _stream_mtx;
+		static std::condition_variable _thread_cv;
 
 		uint16_t passPotato(uint16_t transmittor, uint16_t destination);
 
 		/*	TODO these are some of the required pheromone functions not developed*/
 		uint16_t findTrail(uint16_t transmitt, uint16_t destination);
 		void updatePheromone();
+		void dilutePheromone();
 
-		uint16_t thread_send();
+		uint16_t thread_send(MessagePacket msg);
 		void thread_recv();
+		void receive();
 
 		// function pointer for choosing how to pass the message
 		// will replace the two functions above
@@ -87,8 +91,6 @@ class ThreadNode : public Node
 		// typedef uint16_t(*passingAlgorithm)(uint16_t, uint16_t);
 		// uint16_t thread_send(passingAlgorithm alg);
 		// void thread_recv(passingAlgorithm alg);
-
-
 
 		void incrMsgSent(unsigned int incr);
 		void incrMsgRecieved(unsigned int incr);

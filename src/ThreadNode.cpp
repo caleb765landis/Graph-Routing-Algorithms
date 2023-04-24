@@ -2,76 +2,77 @@
 
 std::default_random_engine ThreadNode::_generator;
 std::mutex ThreadNode::_thread_mtx;
-std::mutex ThreadNode::_stream_mtx;
+std::condition_variable ThreadNode::_thread_cv;
+time_point<high_resolution_clock> ThreadNode::_thread_start_t;
+bool ThreadNode::_stopRecieving;
 
-unsigned int ThreadNode::_messages_sent = 0;
-unsigned int ThreadNode::_messages_recieved = 0;
+int ThreadNode::_messages_sent = 0;
+int ThreadNode::_messages_recieved = 0;
 
 ThreadNode::ThreadNode()
 {}
 
-ThreadNode::ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, uint16_t totalNodes, double duration)
+ThreadNode::ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, uint16_t totalNodes, unsigned int duration)
 	: _send_flag(true), _recv_flag(true), _duration(duration), Node(id, neighbors, totalNodes)
 {
     // seed the generator only once
     if(id == 0)
+    {
         _generator.seed(std::chrono::system_clock::now().time_since_epoch().count());
+        _thread_start_t = high_resolution_clock::now();
+        _stopRecieving = false;
+    }
+    _messages_recieved--;
 }
 
-ThreadNode::ThreadNode(uint16_t id, std::map<uint16_t, double> edges, uint16_t totalNodes, double duration)
-	: _send_flag(true), _recv_flag(true), Node(id, edges, totalNodes)
+ThreadNode::ThreadNode(uint16_t id, std::map<uint16_t, double> edges, uint16_t totalNodes, unsigned int duration)
+	: _send_flag(true), _recv_flag(true), _duration(duration), Node(id, edges, totalNodes)
 {
     // seed the generator only once
-    if(id == 0)
+    if(id == 0){
         _generator.seed(std::chrono::system_clock::now().time_since_epoch().count());
-
+        _stopRecieving = false;
+    }
+    _messages_recieved--;
 }
 
 ThreadNode::ThreadNode(const ThreadNode& other)
-	: _send_flag(other.getSendFlag()), _recv_flag(other.getRecvFlag()), Node(other)
+	: _duration(other._duration), _send_flag(other.getSendFlag()), _recv_flag(other.getRecvFlag()), Node(other)
 {}
 
 ThreadNode::~ThreadNode() 
 {}
 
-// void ThreadNode::run(std::promise<std::pair<unsigned int, double>> & prms)
 void ThreadNode::run()
 {
+    std::thread reciever(&ThreadNode::thread_recv, *this);
+
+    auto start = std::chrono::high_resolution_clock::now();
+    auto now = std::chrono::high_resolution_clock::now();
+    auto timer = std::chrono::duration_cast<std::chrono::milliseconds>(now - start);   
+    auto end = std::chrono::milliseconds(_duration * 1000);
+
+    while(timer <= end) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        // randSleep(SLEEP);
+        thread_send(createMessage());
+
+        std::lock_guard<std::mutex> lock(_thread_mtx);
+        now = std::chrono::high_resolution_clock::now();
+        timer = std::chrono::duration_cast<std::chrono::milliseconds>(now - start);
+    }
+
     _thread_mtx.lock();
-    _thread_start_time.chronoStart();
-    _end_time = _thread_start_time.projectedEnd(_duration);
-    _thread_mtx.unlock();
+    _messages_recieved++;
+    _thread_mtx.unlock();        
 
-    bool times_up = false;
-
-    do {
-        ThreadNode::randSleep(SLEEP);
-
-        // checks to see if all messages have been received.  If there are any messages
-        // still floating around then all threads need to keep running or there will
-        // be an infinite loop
-        _recv_flag = hasReceivedAllMsgs();
-
-        // if time is up then stop sending messages
-        if(!times_up){
-            _thread_mtx.lock();
-            times_up = _end_time <= high_resolution_clock::now();
-            _thread_mtx.unlock();
-
-            thread_send(); 
-        }
-
-        // always receive
-        thread_recv();
-        // if(times_up)
-        //     printTestInfo(getID(), "running....", _recv_flag, -1, times_up, -1);
-
-    } while (!times_up || _recv_flag);
+    if(reciever.joinable())
+        reciever.join();
 }
 
 uint16_t ThreadNode::passPotato(uint16_t transmittor, uint16_t destination)
 {
-    // printTestInfo(getID(), "passPotato", -1, -1, -1, -1);
+    printTestInfo(getID(), "passPotato", -1, -1, -1, -1);
 
     /* TODO can put more code in here for specifically passing a potato
         Whatever we can move from thread_send where we are passing the 
@@ -80,16 +81,13 @@ uint16_t ThreadNode::passPotato(uint16_t transmittor, uint16_t destination)
     return getRandomNeighbor(transmittor, destination);
 }
 
-uint16_t ThreadNode::thread_send()
+uint16_t ThreadNode::thread_send(MessagePacket msg)
 {
-    // printTestInfo(_ID, "thread_send");
-    // create a message and 
-    MessagePacket msg = createMessage();
+    printTestInfo(getID(), "Sending", getID(), getID(), msg.getReceiver(), msg.getDestination());
     std::string m = msg.getDataStr();
 
     // use the mailbox to send the message
     const char *dataPtr = m.c_str();
-    printTestInfo(getID(), "Sending", getID(), getID(), msg.getReceiver(), msg.getDestination());
     uint16_t bytes = mbox_send(msg.getReceiver(), dataPtr, strlen(dataPtr));
 
     // increment the total amount of messages sent
@@ -100,7 +98,7 @@ uint16_t ThreadNode::thread_send()
 
 MessagePacket ThreadNode::createMessage()
 {
-    // printTestInfo(getID(), "createMessage", -1, -1, -1, -1);
+    printTestInfo(getID(), "createMessage", -1, -1, -1, -1);
     // create a message and get a random neighbor to send that
     // message to
     uint16_t random_dest = createDestination(0, getTotalNodes() - 1);
@@ -117,7 +115,7 @@ MessagePacket ThreadNode::createMessage()
 
 uint16_t ThreadNode::createDestination(uint16_t min, uint16_t max) const
 {
-    // printTestInfo(getID(), "createDestination", -1, -1, -1, -1);
+    printTestInfo(getID(), "createDestination", -1, -1, -1, -1);
 
     // This should only be used when creating a message will find
     // The only error checking is to see if the random number is
@@ -139,7 +137,7 @@ uint16_t ThreadNode::createDestination(uint16_t min, uint16_t max) const
 
 uint16_t ThreadNode::getRandomNeighbor(uint16_t prevSender, uint16_t destination) const
 {
-    // printTestInfo(getID(), "getRandomNeighbor", -1, -1, -1, -1);
+    printTestInfo(getID(), "getRandomNeighbor", -1, -1, -1, -1);
     
     /* First check to see if the destination is one of this nodes neighbors **/
     uint16_t random_recv = getID();
@@ -165,15 +163,20 @@ uint16_t ThreadNode::getRandomNeighbor(uint16_t prevSender, uint16_t destination
 
 void ThreadNode::thread_recv()
 {
-    // printTestInfo(_ID, "thread_recv");
- 
-    // If mailbox is empty do not receive anything
-    if(mbox_empty(getID()))
-        return;
-    
-    int rbytes = mbox_recv(this->getID(), &_buffer, MAX);
+    printTestInfo(getID(), "Other Thread", _stopRecieving, -1, -1, -1);
+    while(!_stopRecieving){
+        receive();
+        
+        if(hasReceivedAllMsgs()){
+            std::lock_guard<std::mutex> lock(_thread_mtx);
+            _stopRecieving = true;
+        }
+    }
+} // end thread_recv
 
-    // Create a temporary MessagePacket
+void ThreadNode::receive()
+{
+    int rbytes = mbox_recv(this->getID(), &_buffer, MAX);
     MessagePacket temp(_buffer);
 
     // Check if message's final destination is this thread
@@ -187,33 +190,24 @@ void ThreadNode::thread_recv()
     // If this is not final destination:
     } else {
         // Cool down for a random time
-        this->randCool(COOL);
+        randCool(COOL);
         temp.incHopCount();
 
         // Choose new neighbor as a receiver to pass the message that was not meant for
-		// this node. New neighbor must not be the previous sender
+        // this node. New neighbor must not be the previous sender
         uint16_t from = temp.getTransmittor();		// previous sender
         uint16_t dest = temp.getDestination();		// final destination
         uint16_t receiver = passPotato(from, dest);
         temp.setReceiver(receiver);
+        temp.setTransmittor(getID());
 
-        // Change message's transmittor to this node
-        temp.setTransmittor(this->getID());
-
-        // Get updated message data
-        std::string dataStr = temp.getDataStr();
-
-        printTestInfo(getID(), "Pass Potato", temp.getSender(), from, receiver, dest);
-
-        // Send message to that chosen ThreadNode receiver's mailbox using _mailbox.mbox_send
-        const char *dataPtr = dataStr.c_str();
-        mbox_send(receiver, dataPtr, strlen(dataPtr));
-    } // end if
-} // end thread_recv
+        thread_send(temp);
+    }
+}
 
 void ThreadNode::incrMsgSent(unsigned int incr)
 {
-    // printTestInfo(getID(), "incrMsgSent", -1, -1, -1, -1);
+    printTestInfo(getID(), "incrMsgSent", -1, -1, -1, -1);
 
     // increment the messages by the increement variable
     _thread_mtx.lock();
@@ -223,7 +217,7 @@ void ThreadNode::incrMsgSent(unsigned int incr)
 
 void ThreadNode::incrMsgRecieved(unsigned int incr)
 {
-    // printTestInfo(getID(), "incrMsgReceived", -1, -1, -1, -1);
+    printTestInfo(getID(), "incrMsgReceived", -1, -1, -1, -1);
 
     // increment the messages received by the increment variable
     _thread_mtx.lock();
@@ -233,7 +227,7 @@ void ThreadNode::incrMsgRecieved(unsigned int incr)
 
 void ThreadNode::randSleep(double mean)
 {
-    // printTestInfo(getID(), "randSleep", -1, -1, -1, -1);
+    printTestInfo(getID(), "randSleep", -1, -1, -1, -1);
 
     // choose a random number for the node to sleep
     _thread_mtx.lock();
@@ -245,7 +239,7 @@ void ThreadNode::randSleep(double mean)
 
 void ThreadNode::randCool(double mean)
 {
-    // printTestInfo(getID(), "randCool", -1, -1, -1, -1);
+    printTestInfo(getID(), "randCool", -1, -1, -1, -1);
 
     // choose a random number for the node to cool
     _thread_mtx.lock();
@@ -256,7 +250,7 @@ void ThreadNode::randCool(double mean)
 
 void ThreadNode::recordMessage(MessagePacket msg)
 {
-    // printTestInfo(getID(), "recordMessages", -1, -1, -1, -1);
+    printTestInfo(getID(), "recordMessages", msg.getSender(), msg.getTransmittor(), msg.getReceiver(), msg.getDestination());
     // Stop message timer
     _thread_mtx.lock();
     msg.timeStop();
@@ -265,19 +259,20 @@ void ThreadNode::recordMessage(MessagePacket msg)
     // record the messages hops and time
     _total_hops += msg.getHopCount();
     _total_time += msg.getFinalTimeInterval();
-
 }
 
 bool ThreadNode::hasReceivedAllMsgs() const
 {
-    // printTestInfo(getID(), "hasReceivedAllMsgs", -1, -1, -1, -1);
+    printTestInfo(getID(), "hasReceivedAllMsgs", -1, -1, -1, -1);
     bool allMsgsReceived;
 
     // check to see if the number of messages received matches the number
     // of messages sent
     _thread_mtx.lock();
-    allMsgsReceived = _messages_recieved != _messages_sent;
+    allMsgsReceived = _messages_recieved == _messages_sent;
     _thread_mtx.unlock();
+
+    // printTestInfo(getID(), "HAS RECEIVED ALL MSGS ", (uint16_t)allMsgsReceived, (uint16_t)_messages_recieved, (uint16_t)_messages_sent, -1);
 
     return allMsgsReceived;
 }
@@ -289,7 +284,7 @@ void ThreadNode::printTestInfo(uint16_t id, std::string action, uint16_t sender,
     std::cout << "Thread - "<< id << " - " << action 
             << " - Sender - " << sender << " - Transmittor - " << trans
             << " - Receiver - " << recv << " - Dest - " << dest 
-            << std::endl;
+            << " -> (" << _messages_sent << ":" << _messages_recieved << ")" << std::endl;
     _thread_mtx.unlock();
 }
 
