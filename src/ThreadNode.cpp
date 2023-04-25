@@ -62,9 +62,7 @@ void ThreadNode::run()
         timer = std::chrono::duration_cast<std::chrono::milliseconds>(now - start);
     }
 
-    _thread_mtx.lock();
-    _messages_recieved++;
-    _thread_mtx.unlock();        
+    incrMsgRecieved(1);
 
     if(reciever.joinable())
         reciever.join();
@@ -72,7 +70,7 @@ void ThreadNode::run()
 
 uint16_t ThreadNode::passPotato(uint16_t transmittor, uint16_t destination)
 {
-    printTestInfo(getID(), "passPotato", -1, -1, -1, -1);
+    // printTestInfo(getID(), "passPotato", -1, -1, -1, -1);
 
     /* TODO can put more code in here for specifically passing a potato
         Whatever we can move from thread_send where we are passing the 
@@ -83,7 +81,6 @@ uint16_t ThreadNode::passPotato(uint16_t transmittor, uint16_t destination)
 
 uint16_t ThreadNode::thread_send(MessagePacket msg)
 {
-    printTestInfo(getID(), "Sending", getID(), getID(), msg.getReceiver(), msg.getDestination());
     std::string m = msg.getDataStr();
 
     // use the mailbox to send the message
@@ -98,12 +95,14 @@ uint16_t ThreadNode::thread_send(MessagePacket msg)
 
 MessagePacket ThreadNode::createMessage()
 {
-    printTestInfo(getID(), "createMessage", -1, -1, -1, -1);
+    // printTestInfo(getID(), "createMessage", -1, -1, -1, -1);
     // create a message and get a random neighbor to send that
     // message to
     uint16_t random_dest = createDestination(0, getTotalNodes() - 1);
     uint16_t random_recv = getRandomNeighbor(getID(), random_dest);
     MessagePacket msg(getID(), random_dest, random_recv);
+
+    printTestInfo(getID(), "Sending", getID(), getID(), msg.getReceiver(), msg.getDestination());
 
     // Set current time as start of keeping track of how long message is in network
     _thread_mtx.lock();
@@ -115,7 +114,7 @@ MessagePacket ThreadNode::createMessage()
 
 uint16_t ThreadNode::createDestination(uint16_t min, uint16_t max) const
 {
-    printTestInfo(getID(), "createDestination", -1, -1, -1, -1);
+    // printTestInfo(getID(), "createDestination", -1, -1, -1, -1);
 
     // This should only be used when creating a message will find
     // The only error checking is to see if the random number is
@@ -137,7 +136,7 @@ uint16_t ThreadNode::createDestination(uint16_t min, uint16_t max) const
 
 uint16_t ThreadNode::getRandomNeighbor(uint16_t prevSender, uint16_t destination) const
 {
-    printTestInfo(getID(), "getRandomNeighbor", -1, -1, -1, -1);
+    // printTestInfo(getID(), "getRandomNeighbor", -1, -1, -1, -1);
     
     /* First check to see if the destination is one of this nodes neighbors **/
     uint16_t random_recv = getID();
@@ -163,21 +162,32 @@ uint16_t ThreadNode::getRandomNeighbor(uint16_t prevSender, uint16_t destination
 
 void ThreadNode::thread_recv()
 {
-    printTestInfo(getID(), "Other Thread", _stopRecieving, -1, -1, -1);
-    while(!_stopRecieving){
+    // printTestInfo(getID(), "Other Thread", -1, -1, -1, -1);
+    bool stopReceiving;
+    {
+        std::lock_guard<std::mutex> lock(_thread_mtx);
+        stopReceiving = _stopRecieving;
+    }
+    while(!stopReceiving){
+        // printTestInfo(getID(), "In loop", -1, -1, -1, -1);
         receive();
         
         if(hasReceivedAllMsgs()){
             std::lock_guard<std::mutex> lock(_thread_mtx);
             _stopRecieving = true;
+            stopReceiving = true;
         }
     }
 } // end thread_recv
 
 void ThreadNode::receive()
 {
+    // printTestInfo(getID(), "In Receive", 0, 0, 0, 0);
+
     int rbytes = mbox_recv(this->getID(), &_buffer, MAX);
-    MessagePacket temp(_buffer);
+    std::string buff = _buffer;
+    // printTestInfo(getID(), buff, 0, 0, 0, 0);
+    MessagePacket temp(buff);
 
     // Check if message's final destination is this thread
     // If this is final destination:
@@ -201,13 +211,14 @@ void ThreadNode::receive()
         temp.setReceiver(receiver);
         temp.setTransmittor(getID());
 
+        printTestInfo(getID(), "Pass Potato", temp.getSender(), temp.getTransmittor(), temp.getReceiver(), temp.getDestination());
         thread_send(temp);
     }
 }
 
 void ThreadNode::incrMsgSent(unsigned int incr)
 {
-    printTestInfo(getID(), "incrMsgSent", -1, -1, -1, -1);
+    // printTestInfo(getID(), "incrMsgSent", -1, -1, -1, -1);
 
     // increment the messages by the increement variable
     _thread_mtx.lock();
@@ -217,7 +228,7 @@ void ThreadNode::incrMsgSent(unsigned int incr)
 
 void ThreadNode::incrMsgRecieved(unsigned int incr)
 {
-    printTestInfo(getID(), "incrMsgReceived", -1, -1, -1, -1);
+    // printTestInfo(getID(), "incrMsgReceived", -1, -1, -1, -1);
 
     // increment the messages received by the increment variable
     _thread_mtx.lock();
@@ -239,7 +250,7 @@ void ThreadNode::randSleep(double mean)
 
 void ThreadNode::randCool(double mean)
 {
-    printTestInfo(getID(), "randCool", -1, -1, -1, -1);
+    // printTestInfo(getID(), "randCool", -1, -1, -1, -1);
 
     // choose a random number for the node to cool
     _thread_mtx.lock();
@@ -250,7 +261,7 @@ void ThreadNode::randCool(double mean)
 
 void ThreadNode::recordMessage(MessagePacket msg)
 {
-    printTestInfo(getID(), "recordMessages", msg.getSender(), msg.getTransmittor(), msg.getReceiver(), msg.getDestination());
+    // printTestInfo(getID(), "recordMessages", msg.getSender(), msg.getTransmittor(), msg.getReceiver(), msg.getDestination());
     // Stop message timer
     _thread_mtx.lock();
     msg.timeStop();
@@ -263,8 +274,8 @@ void ThreadNode::recordMessage(MessagePacket msg)
 
 bool ThreadNode::hasReceivedAllMsgs() const
 {
-    printTestInfo(getID(), "hasReceivedAllMsgs", -1, -1, -1, -1);
-    bool allMsgsReceived;
+    // printTestInfo(getID(), "hasReceivedAllMsgs", -1, -1, -1, -1);
+    bool allMsgsReceived = false;
 
     // check to see if the number of messages received matches the number
     // of messages sent
@@ -281,9 +292,9 @@ void ThreadNode::printTestInfo(uint16_t id, std::string action, uint16_t sender,
 {
     // print test information for depugging
     _thread_mtx.lock();
-    std::cout << "Thread - "<< id << " - " << action 
-            << " - Sender - " << sender << " - Transmittor - " << trans
-            << " - Receiver - " << recv << " - Dest - " << dest 
+    std::cout << "Thread - "<< std::to_string(id) << " - " << action 
+            << " - Sender - " << std::to_string(sender) << " - Transmittor - " << std::to_string(trans)
+            << " - Receiver - " << std::to_string(recv) << " - Dest - " << std::to_string(dest)
             << " -> (" << _messages_sent << ":" << _messages_recieved << ")" << std::endl;
     _thread_mtx.unlock();
 }

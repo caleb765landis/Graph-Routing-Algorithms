@@ -65,21 +65,23 @@ bool MailBox::empty(uint16_t msgID){
 
 int MailBox::send(uint16_t msgID, const void *packet, int len){
 
+	int numBytes;
 	// could be critical section
-	_mtx[msgID].lock();;
+	{
+		std::lock_guard<std::mutex> lock(_mtx[msgID]);
 
-	char* msg = (char*)malloc(len + 1);
-	strcpy(msg, (char*)packet);
+		char* msg = (char*)malloc(len + 1);
+		strcpy(msg, (char*)packet);
 
-	item pckt = {len, msg};
-	int numBytes = sizeof(pckt);
+		item pckt = {len, msg};
+		numBytes = sizeof(pckt);
 
-	// std::cout << msgID << " - MAILBOX SEND: " << msg << std::endl;
-	_mailboxes[msgID].push(pckt);
-	_mtx[msgID].unlock();
+		// std::cout << msgID << " - MAILBOX SEND: " << msg << std::endl;
+		_mailboxes[msgID].push(pckt);
+	}
 
 	
-	
+
 	cvs[msgID].notify_all();
 
 	return numBytes;
@@ -87,21 +89,24 @@ int MailBox::send(uint16_t msgID, const void *packet, int len){
 
 int MailBox::recv(uint16_t msgID, void *packet, int max){
 	int numBytes = 0;
-	// char* buffer = (char*)malloc(max);
 
 	// critical section
 	std::unique_lock<std::mutex> lk(_mtx[msgID]);
-	bool empty = _mailboxes[msgID].empty();
-	std::cv_status timedOut = cvs[msgID].wait_for(lk, std::chrono::milliseconds(200));
+	// bool empty = _mailboxes[msgID].empty();
+	// std::cv_status timedOut = cvs[msgID].wait_for(lk, std::chrono::milliseconds(200));
+	cvs[msgID].wait_for(lk, std::chrono::milliseconds(1000));
+	std::cerr << msgID << " - Mailbox - Receive" << std::endl;
 	// bool timedOut = cvs[msgID].wait_for(lk, std::chrono::milliseconds(200), [empty]{return !empty;});
 
-	if(timedOut == std::cv_status::no_timeout)
-	{
+	if(!(_mailboxes[msgID].empty())){
 		strcpy((char*)packet, _mailboxes[msgID].front().content);	
 		free(_mailboxes[msgID].front().content);
 		_mailboxes[msgID].pop();
 		numBytes = sizeof(packet);
 	}
+
+	std::cerr << msgID << " - Mailbox - Receive - End" << std::endl;
+	// }
 
 	return numBytes;
 }

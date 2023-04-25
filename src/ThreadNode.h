@@ -35,7 +35,7 @@
 
 #define MAX 1024
 #define SLEEP 100000
-#define COOL 1000
+#define COOL 50
 
 using namespace std::chrono;
 
