@@ -184,14 +184,14 @@ void ThreadNode::receive()
 {
     // printTestInfo(getID(), "In Receive", 0, 0, 0, 0);
 
-    int rbytes = mbox_recv(this->getID(), &_buffer, MAX);
+    int rbytes = mbox_recv(getID(), &_buffer, MAX);
     std::string buff = _buffer;
     // printTestInfo(getID(), buff, 0, 0, 0, 0);
     MessagePacket temp(buff);
 
     // Check if message's final destination is this thread
     // If this is final destination:
-    if (temp.getDestination() == this->getID())
+    if (temp.getDestination() == getID())
     {
         printTestInfo(getID(), "Reached Destination", temp.getSender(), temp.getTransmittor(), temp.getReceiver(), temp.getDestination());
         recordMessage(temp);

@@ -95,7 +95,7 @@ int MailBox::recv(uint16_t msgID, void *packet, int max){
 	// bool empty = _mailboxes[msgID].empty();
 	// std::cv_status timedOut = cvs[msgID].wait_for(lk, std::chrono::milliseconds(200));
 	cvs[msgID].wait_for(lk, std::chrono::milliseconds(1000));
-	std::cerr << msgID << " - Mailbox - Receive" << std::endl;
+	// std::cerr << msgID << " - Mailbox - Receive" << std::endl;
 	// bool timedOut = cvs[msgID].wait_for(lk, std::chrono::milliseconds(200), [empty]{return !empty;});
 
 	if(!(_mailboxes[msgID].empty())){
@@ -105,7 +105,7 @@ int MailBox::recv(uint16_t msgID, void *packet, int max){
 		numBytes = sizeof(packet);
 	}
 
-	std::cerr << msgID << " - Mailbox - Receive - End" << std::endl;
+	// std::cerr << msgID << " - Mailbox - Receive - End" << std::endl;
 	// }
 
 	return numBytes;
