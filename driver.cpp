@@ -24,7 +24,7 @@ void joinThreads(std::vector<std::thread*> &threads);
 
 int main(int argc, char *argv[]){
 
-	double optionD = 5; 					// <-- TODO get value from main arguments
+	double optionD = 3; 					// <-- TODO get value from main arguments
 	char optionR[] = {'h','o','t'}; 		// <-- TODO get value from main arguments
 	std::string filename = "graph/A10.dat";	// <-- TODO get value from main arguments
 
@@ -57,6 +57,7 @@ int main(int argc, char *argv[]){
 	createNodes(nodes, graph, optionD);
 	// these two functions work with both types of nodes
 	runThreads(threads, nodes);
+
 	joinThreads(threads);
 	analysis results = analyzeResults(nodes);
 
@@ -97,7 +98,6 @@ void runThreads(std::vector<std::thread*> &threads, std::vector<ThreadNode> &nod
 	for(it = nodes.begin(); it != nodes.end(); it++){
 		threads.push_back(std::move(new std::thread(&ThreadNode::run, &(*it))));
 	}
-
 }
 
 void joinThreads(std::vector<std::thread*> &threads)
@@ -127,10 +127,3 @@ analysis analyzeResults(std::vector<ThreadNode> nodes)
 	return a;
 }
 
-		// std::string analFileName = "analysis/A" + std::to_string(graphNumber) + ".csv";
-		// std::ofstream analFile;
-		// analFile.open(analFileName);
-
-		// analFile << "Nodes: ," << graph.getNumNodes() << ",\n";
-		// analFile << "Edges: ," << graph.getNumEdges() << ",\n";
-		// analFile << "Messages, Hops, Time\n";

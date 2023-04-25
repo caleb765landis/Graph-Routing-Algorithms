@@ -49,9 +49,7 @@ class ThreadNode : public Node
 		~ThreadNode();
 
 		void run();
-		bool getSendFlag() const;
-		bool getRecvFlag() const;
-
+	
 		// unsigned int getMaxMsgs() const;
 		// unsigned int getHopCount() const;
 		// double getTotalTime() const;
@@ -63,8 +61,6 @@ class ThreadNode : public Node
 		unsigned int _duration;
 
 		char _buffer[MAX];
-		bool _send_flag;
-		bool _recv_flag;
 		static bool _stopRecieving;
 
 		static int _messages_sent;

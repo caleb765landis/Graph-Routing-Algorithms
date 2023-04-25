@@ -80,10 +80,7 @@ int MailBox::send(uint16_t msgID, const void *packet, int len){
 		_mailboxes[msgID].push(pckt);
 	}
 
-	
-
 	cvs[msgID].notify_all();
-
 	return numBytes;
 }
 
