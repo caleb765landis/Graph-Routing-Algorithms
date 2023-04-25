@@ -163,20 +163,25 @@ uint16_t ThreadNode::getRandomNeighbor(uint16_t prevSender, uint16_t destination
 void ThreadNode::thread_recv()
 {
     // printTestInfo(getID(), "Other Thread", -1, -1, -1, -1);
-    bool stopReceiving;
-    {
-        std::lock_guard<std::mutex> lock(_thread_mtx);
-        stopReceiving = _stopRecieving;
-    }
-    while(!stopReceiving){
-        // printTestInfo(getID(), "In loop", -1, -1, -1, -1);
-        receive();
-        
-        if(hasReceivedAllMsgs()){
+    try{
+        bool stopReceiving;
+        {
             std::lock_guard<std::mutex> lock(_thread_mtx);
-            _stopRecieving = true;
-            stopReceiving = true;
+            stopReceiving = _stopRecieving;
         }
+        while(!stopReceiving){
+            // printTestInfo(getID(), "In loop", -1, -1, -1, -1);
+            receive();
+            
+            if(hasReceivedAllMsgs()){
+                std::lock_guard<std::mutex> lock(_thread_mtx);
+                _stopRecieving = true;
+                stopReceiving = true;
+            }
+        }
+    }
+    catch(std::exception &e){
+        std::cout << e.what() << std::endl;
     }
 } // end thread_recv
 
