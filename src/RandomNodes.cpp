@@ -1,17 +1,17 @@
 #include "RandomNodes.h"
 
 
-uint16_t RandomNodes::getRandomNeighbor(std::vector<uint16_t> nbors, std::default_random_engine &gen)
-{
-    // get a random number from a uniform distribution in the range
-    // of 0 and the number of neighbors this will be the neighbor's index
-    uint16_t nborIndex = rand_uniform(-1, nbors.size() - 1, gen);
-    uint16_t nbor;
+// uint16_t RandomNodes::getRandomNeighbor(std::vector<uint16_t> nbors, std::default_random_engine &gen)
+// {
+//     // get a random number from a uniform distribution in the range
+//     // of 0 and the number of neighbors this will be the neighbor's index
+//     uint16_t nborIndex = rand_uniform(0, nbors.size() - 1, gen);
+//     uint16_t nbor;
 
-    nbor = nbors.at(nborIndex);
+//     nbor = nbors.at(nborIndex);
 
-    return nbor;
-}
+//     return nbor;
+// }
 
 
 uint16_t RandomNodes::getRandomNeighbor(uint16_t prevSender, std::vector<uint16_t> nbors, std::default_random_engine &gen)

@@ -19,7 +19,7 @@ struct analysis{
 
 analysis analyzeResults(std::vector<ThreadNode> nodes);
 void createNodes(std::vector<ThreadNode> &nodes, ThreadGraph graph, unsigned int duration);
-void runThreads(std::vector<std::thread*> &t, std::vector<ThreadNode> &nodes);
+void runThreads(std::vector<std::thread*> &t, std::vector<ThreadNode> &nodes, std::string algName);
 void joinThreads(std::vector<std::thread*> &threads);
 
 int main(int argc, char *argv[]){
@@ -29,34 +29,20 @@ int main(int argc, char *argv[]){
 	std::string filename = "graph/A10.dat";	// <-- TODO get value from main arguments
 
 	// output stream for storing the graphs analysis
-	std::ofstream analysisFile;
-	analysisFile.open("Analysis.csv");
-	analysisFile << "Graph, Nodes, Edges, Hops, Node-Edge Ratio, Time, \n";
 
-	/*
-		Beginning work on deciding which algorithm to use but I am not
-		familiar with polymorphism and would like to be ambiguous for
-		selecting which class to use.
+	// std::ofstream analysisFile;
+	// analysisFile.open("Analysis.csv");
+	// analysisFile << "Graph, Nodes, Edges, Hops, Node-Edge Ratio, Time, \n";
 
-		If you all have an idea on how to implement this let me know.
-	*/
-	if(strcmp(optionR, "hot") == 0){
-
-	}
-	else if(strcmp(optionR, "ant") == 0){
-
-	}
 
 	ThreadGraph graph(filename);
-
 	std::vector<ThreadNode> nodes;			// Node objects
 	std::vector<std::thread*> threads;		// Threads
 
 	std::cout << "\nTest - " << filename << " - duration - " << optionD << "s"<< std::endl;
 
 	createNodes(nodes, graph, optionD);
-	// these two functions work with both types of nodes
-	runThreads(threads, nodes);
+	runThreads(threads, nodes, optionR);
 
 	joinThreads(threads);
 	analysis results = analyzeResults(nodes);
@@ -67,16 +53,16 @@ int main(int argc, char *argv[]){
 				<< ") - Total Hops - " << results.hops 
 				<< " - Total Time - " << results.time << std::endl;
 	
-	analysisFile << filename << ", "
-				<< graph.getNumNodes() << ", "
-				<< graph.getNumEdges() << ", "
-				<< (double)graph.getNumEdges() / graph.getNumNodes() << ", "
-				<< results.hops << ", " 
-				<< results.time << ", \n";
+	// analysisFile << filename << ", "
+	// 			<< graph.getNumNodes() << ", "
+	// 			<< graph.getNumEdges() << ", "
+	// 			<< (double)graph.getNumEdges() / graph.getNumNodes() << ", "
+	// 			<< results.hops << ", " 
+	// 			<< results.time << ", \n";
 
 
 
-	analysisFile.close();
+	// analysisFile.close();
 
 
 	return 0;
@@ -91,12 +77,12 @@ void createNodes(std::vector<ThreadNode> &nodes, ThreadGraph graph, unsigned int
 	}
 }
 
-void runThreads(std::vector<std::thread*> &threads, std::vector<ThreadNode> &nodes)
+void runThreads(std::vector<std::thread*> &threads, std::vector<ThreadNode> &nodes, std::string algorithmName)
 {
 	// Use a thread for each of the nodes to use the nodes run function.
 	std::vector<ThreadNode>::iterator it;
 	for(it = nodes.begin(); it != nodes.end(); it++){
-		threads.push_back(std::move(new std::thread(&ThreadNode::run, &(*it))));
+		threads.push_back(std::move(new std::thread(&ThreadNode::run, &(*it), algorithmName)));
 	}
 }
 
@@ -121,7 +107,7 @@ analysis analyzeResults(std::vector<ThreadNode> nodes)
 		std::pair<unsigned int, double> p = {nodes[i].getHopCount(), nodes[i].getTotalTime()};
 		a.hops += p.first;
 		a.time += p.second;
-		std::cout << "Node (" << i << ") - Hop Count - " << a.hops << " - Time - " << a.time << std::endl;
+		std::cout << "Node (" << i << ") - Hop Count - " << p.first << " - Time - " << p.second << std::endl;
 	}
 
 	return a;

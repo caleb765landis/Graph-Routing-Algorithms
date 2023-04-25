@@ -48,7 +48,7 @@ class ThreadNode : public Node
 		ThreadNode(const ThreadNode& other);
 		~ThreadNode();
 
-		void run();
+		void run(std::string algName);
 	
 		// unsigned int getMaxMsgs() const;
 		// unsigned int getHopCount() const;

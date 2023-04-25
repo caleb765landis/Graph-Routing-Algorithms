@@ -43,30 +43,38 @@ ThreadNode::ThreadNode(const ThreadNode& other)
 ThreadNode::~ThreadNode() 
 {}
 
-void ThreadNode::run()
+void ThreadNode::run(std::string algName)
 {
-    std::thread reciever(&ThreadNode::thread_recv, this);
+    if(algName == "hot")
+    {
+        std::thread reciever(&ThreadNode::thread_recv, this);
 
-    auto start = std::chrono::high_resolution_clock::now();
-    auto now = std::chrono::high_resolution_clock::now();
-    auto timer = std::chrono::duration_cast<std::chrono::milliseconds>(now - start);   
-    auto end = std::chrono::milliseconds(_duration * 1000);
+        auto start = std::chrono::high_resolution_clock::now();
+        auto now = std::chrono::high_resolution_clock::now();
+        auto timer = std::chrono::duration_cast<std::chrono::milliseconds>(now - start);   
+        auto end = std::chrono::milliseconds(_duration * 1000);
 
-    while(timer <= end) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        // randSleep(SLEEP);
-        thread_send(createMessage());
-        incrMsgSent(1);
+        while(timer <= end) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            // randSleep(SLEEP);
+            thread_send(createMessage());
+            incrMsgSent(1);
 
-        std::lock_guard<std::mutex> lock(_thread_mtx);
-        now = std::chrono::high_resolution_clock::now();
-        timer = std::chrono::duration_cast<std::chrono::milliseconds>(now - start);
+            std::lock_guard<std::mutex> lock(_thread_mtx);
+            now = std::chrono::high_resolution_clock::now();
+            timer = std::chrono::duration_cast<std::chrono::milliseconds>(now - start);
+        }
+
+        incrMsgRecieved(1);
+
+        if(reciever.joinable())
+            reciever.join();
+    }
+    else if(algName == "ant")
+    {
+        /** Do the ANT stuff */
     }
 
-    incrMsgRecieved(1);
-
-    if(reciever.joinable())
-        reciever.join();
 }
 
 uint16_t ThreadNode::passPotato(uint16_t transmittor, uint16_t destination)
@@ -169,6 +177,7 @@ void ThreadNode::thread_recv()
         std::lock_guard<std::mutex> lock(_thread_mtx);
         stopReceiving = ThreadNode::_stopRecieving;
     }
+
     while(!stopReceiving){
         // printTestInfo(getID(), "In loop", -1, -1, -1, -1);
         try{
@@ -177,7 +186,7 @@ void ThreadNode::thread_recv()
             if(hasReceivedAllMsgs()){
                 std::lock_guard<std::mutex> lock(_thread_mtx);
                 ThreadNode::_stopRecieving = true;
-                stopReceiving = true;
+                stopReceiving = ThreadNode::_stopRecieving;
             }
         } catch (std::exception &e){
             std::lock_guard<std::mutex> lock(_thread_mtx);
@@ -188,10 +197,8 @@ void ThreadNode::thread_recv()
 
 void ThreadNode::receive()
 {
-    // printTestInfo(getID(), "In Receive", 0, 0, 0, 0);
-    // if(mbox_empty(getID()))
-    //     return;
-
+    // if bytes are 0 then there wasn't anything in the buffer
+    // return
     int rbytes = mbox_recv(getID(), &_buffer, MAX);
     if(rbytes <= 0)
         return;
