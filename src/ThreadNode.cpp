@@ -15,13 +15,18 @@ ThreadNode::ThreadNode()
 ThreadNode::ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, uint16_t totalNodes, unsigned int duration)
 	: _duration(duration), Node(id, neighbors, totalNodes)
 {
-    // seed the generator only once
+    // seed the generator, and thread start time only once
+    // not sure if we still need the _stopReceiving boolean value or not
+    // but I am initializing it to false any way.
     if(id == 0)
     {
         _generator.seed(std::chrono::system_clock::now().time_since_epoch().count());
         _thread_start_t = high_resolution_clock::now();
         _stopRecieving = false;
     }
+    // Decrementing the _messages_recieved based on the number of nodes created
+    // so the independant Receive threads will not finish until the main threads
+    // are done
     _messages_recieved--;
 }
 
@@ -45,18 +50,39 @@ ThreadNode::~ThreadNode()
 
 void ThreadNode::run(std::string algName)
 {
+    auto start = std::chrono::high_resolution_clock::now();
+    auto now = std::chrono::high_resolution_clock::now();
+    auto timer = std::chrono::duration_cast<std::chrono::milliseconds>(now - start);   
+    auto end = std::chrono::milliseconds(_duration * 1000);
+
     if(algName == "hot")
     {
+        // create the reciever thread and pass it the thread_recv function
+        // of this node
+        //
+        // TODO ->  based on our implementation of which algorithm to use
+        //          this may take a function pointer as well
         std::thread reciever(&ThreadNode::thread_recv, this);
 
-        auto start = std::chrono::high_resolution_clock::now();
-        auto now = std::chrono::high_resolution_clock::now();
-        auto timer = std::chrono::duration_cast<std::chrono::milliseconds>(now - start);   
-        auto end = std::chrono::milliseconds(_duration * 1000);
 
+        // time the sending for each thread based on the _duration till "end"
         while(timer <= end) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            // the running of each send THREAD needs to be staggered by the EXECUTION_CYCLE time
+            // by adding the EXECUTION time with the node's ID times the EXECUTION_CYCLE and 
+            // the total number of nodes
+            //                                                ID * EXECUTION_CYCLE
+            //      EXECUTION_SLEEP_TIME = EXECUTION_CYCLE + ---------------------
+            //                                                    TOTAL_NODES
+            //  EX:
+            //                                        0 * EXECUTION_CYCLE
+            //      EST(NODE(0)) = EXECUTION_CYCLE + --------------------- = EXECUTION_CYCLE
+            //                                            TOTAL_NODES
+            //
+            std::this_thread::sleep_for(std::chrono::milliseconds(EXECUTION_CYCLE + (getID() * EXECUTION_CYCLE) / getTotalNodes() ) );
+
+            // randSleep is the old Implementation of the HOT_POTATO algorithm
             // randSleep(SLEEP);
+
             thread_send(createMessage());
             incrMsgSent(1);
 
@@ -65,6 +91,14 @@ void ThreadNode::run(std::string algName)
             timer = std::chrono::duration_cast<std::chrono::milliseconds>(now - start);
         }
 
+        // after the main threads are done we increment the message recieved
+        // because at the creation of the node we decremented by the number
+        // of threads created so that when we are running the other independent
+        // receive thread it starts at a deficit so it could not finish until
+        // the sending threads are done
+        //
+        // Once all main threads have finished the receive threads could then
+        // finish afterwards
         incrMsgRecieved(1);
 
         if(reciever.joinable())

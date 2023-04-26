@@ -7,35 +7,14 @@
 #include "Node.h"
 #include "RandomNodes.h"
 
-/* 
-	TODO: Need to change the Max message implementation to a timed limit implementation
-	
-	Current Implementation: Threads all have a static total messages that can be sent
-	once the maximum number of messages sent is reached the threads stop sending
-	messages and wait until all messages are recieved.  They wait so that they can
-	all finish at the same time.
-
-		Implementation Functions:
-			run()
-			thread_send()
-			thread_recv()
-
-		variables used in current implementation:
-			_messages_sent
-			_messages_recieved
-			MAX_MESSAGES
-			_send_flag
-			_recv_flag
-			_count_mtx
-	
-	New Implementation:  Needs to use a time limit for how long the messages send
-	messages.  Need to probably keep the recieved message flags to make sure messages
-	are not still moving through the graph before the threads join
-*/
 
 #define MAX 1024
-#define SLEEP 100000
 #define COOL 50
+#define INCR_PHEROMONE 0.75
+#define EXECUTION_CYCLE 500
+#define POWER_COEFF 2
+#define DILUTION_HALF_LIFE 50
+
 
 using namespace std::chrono;
 
