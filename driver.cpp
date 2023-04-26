@@ -43,7 +43,6 @@ int main(int argc, char *argv[]){
 
 	createNodes(nodes, graph, optionD);
 	runThreads(threads, nodes, optionR);
-
 	joinThreads(threads);
 	analysis results = analyzeResults(nodes);
 
