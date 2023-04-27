@@ -36,24 +36,25 @@ uint16_t RandomNodes::getRandomNeighbor(uint16_t prevSender, std::vector<uint16_
     return nbor;
 }
 
-uint16_t RandomNodes::getPheromoneNeighbor(uint16_t prev, std::map<uint16_t, double> edges, std::default_random_engine &gen)
+uint16_t RandomNodes::getPheromoneNeighbor(uint16_t prev, const std::map<uint16_t, double> edges, std::default_random_engine &gen)
 {
     /* Store values and keys in parallel vectors */
-    std::vector<double> discretValues;
     std::vector<uint16_t> keys;
-    for(auto& it : edges)
+    std::vector<double> discretValues;
+    for(auto it : edges)
     {
-        discretValues.push_back(it.second);
         keys.push_back(it.first);
+        discretValues.push_back(it.second);
     }
+
 
     /*  get a random index based on the discrete distribution of values 
         In the discrete values vector */
     uint16_t nborIndex = rand_discrete(discretValues, gen);
-    if(discretValues.size() > 1 && keys.at(nborIndex) == prev){
-        // if the random key is the same as the previos do it again
-        // unless the list of nbors only has one neighbor
-        nborIndex = getPheromoneNeighbor(prev, edges, gen);
+    if(keys.at(nborIndex) == prev){
+        if(keys.size() != 1){
+            nborIndex = getPheromoneNeighbor(prev, edges, gen);
+        }
     }
 
     /*  return the random value that is the same index of the keys */

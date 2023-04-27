@@ -7,11 +7,17 @@ Node::Node()
 
 Node::Node(uint16_t id, std::vector<uint16_t> neighbors, uint16_t totalNodes)
     : _ID(id), _neighbors(neighbors), _total_nodes(totalNodes), _total_hops(0), _total_time(0)
-{}
+{
+    // std::cout << id << ": ";
+    // for(auto &nbor : getNbors()){
+    //     std::cout << nbor << " - ";
+    // }
+    // std::cout << "end" << std::endl;
+}
 
-Node::Node(uint16_t id, std::map<uint16_t, double> edges, uint16_t totalNodes)
-    : _ID(id), _total_nodes(totalNodes), _total_hops(0), _total_time(0)
-{}
+// Node::Node(uint16_t id, std::map<uint16_t, std::pair<double, std::chrono::time_point<high_resolution_clock>> edges, uint16_t totalNodes)
+//     : _ID(id), _total_nodes(totalNodes), _total_hops(0), _total_time(0)
+// {}
 
 Node::Node(const Node& other)
     : _ID(other.getID()), _neighbors(other.getNbors()), _total_nodes(other.getTotalNodes()),

@@ -1,14 +1,14 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
-#include <condition_variable>
+// #include <condition_variable>
 #include <string.h>
 #include <typeinfo>
-#include <future>
+// #include <future>
 #include "src/ThreadGraph.h"
 #include "src/ThreadNode.h"
-#include "src/MessagePacket.h"
-#include "src/mbox.h"
+// #include "src/MessagePacket.h"
+// #include "src/mbox.h"
 
 #define MAX 1024
 
@@ -26,7 +26,8 @@ int main(int argc, char *argv[]){
 
 	double optionD = 3; 					// <-- TODO get value from main arguments
 	char optionR[] = {'h','o','t'}; 		// <-- TODO get value from main arguments
-	std::string filename = "graph/A10.dat";	// <-- TODO get value from main arguments
+	// char optionR[] = {'a','n','t'}; 		// <-- TODO get value from main arguments
+	std::string filename = "./graph/A10.dat";	// <-- TODO get value from main arguments
 
 	// output stream for storing the graphs analysis
 
@@ -51,7 +52,7 @@ int main(int argc, char *argv[]){
 	// group of threads.
 	std::cout 	<< "Graph (" << filename 
 				<< ") - Total Hops - " << results.hops 
-				<< " - Total Time - " << results.time << std::endl;
+				<< " - Total Time - " << results.time << " ms\n";
 	
 	// analysisFile << filename << ", "
 	// 			<< graph.getNumNodes() << ", "
@@ -110,7 +111,7 @@ void analyzeResults(std::vector<ThreadNode> nodes, analysis &results)
 		std::pair<unsigned int, double> p = {nodes[i].getHopCount(), nodes[i].getTotalTime()};
 		results.hops += p.first;
 		results.time += p.second;
-		std::cout << "Node (" << i << ") - Hop Count - " << p.first << " - Time - " << p.second << "ms\n";
+		std::cout << "Node (" << i << ") - Hop Count - " << p.first << " - Time - " << p.second << " ms\n";
 	}
 }
 
