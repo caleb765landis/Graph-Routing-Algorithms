@@ -3,8 +3,11 @@
 std::default_random_engine ThreadNode::_generator;
 std::mutex ThreadNode::_thread_mtx;
 std::condition_variable ThreadNode::_thread_cv;
-time_point<high_resolution_clock> ThreadNode::_thread_start_t;
+// time_point<high_resolution_clock> ThreadNode::_thread_start_t;
 bool ThreadNode::_stopRecieving;
+
+// uint16_t (ThreadNode::*getRandomNeighbor)(uint16_t, uint16_t) = NULL;
+// uint16_t (ThreadNode::*findTrail)(uint16_t, uint16_t) = NULL;
 
 int ThreadNode::_messages_sent = 0;
 int ThreadNode::_messages_recieved = 0;
@@ -21,8 +24,14 @@ ThreadNode::ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, uint16_t to
     if(id == 0)
     {
         _generator.seed(std::chrono::system_clock::now().time_since_epoch().count());
-        _thread_start_t = high_resolution_clock::now();
+        // _thread_start_t = high_resolution_clock::now();
         _stopRecieving = false;
+    }
+
+    // initiallize the node edges for pheromones
+    for(auto &it : neighbors){
+        _edges[it] = pow(INIT_PHEROMONE, POWER_COEFF);
+        _edge_times[it] = high_resolution_clock::now();
     }
     // Decrementing the _messages_recieved based on the number of nodes created
     // so the independant Receive threads will not finish until the main threads
@@ -30,96 +39,143 @@ ThreadNode::ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, uint16_t to
     _messages_recieved--;
 }
 
-ThreadNode::ThreadNode(uint16_t id, std::map<uint16_t, double> edges, uint16_t totalNodes, unsigned int duration)
-	: _duration(duration), Node(id, edges, totalNodes)
-{
-    // seed the generator only once
-    if(id == 0){
-        _generator.seed(std::chrono::system_clock::now().time_since_epoch().count());
-        _stopRecieving = false;
-    }
-    _messages_recieved--;
-}
-
 ThreadNode::ThreadNode(const ThreadNode& other)
-	: _duration(other._duration), Node(other)
-{}
+	: _duration(other.getDuration()), _edges(other.getEdges()), _edge_times(other.getEdgeTimes()), 
+    Node(other)
+{
+    
+}
 
 ThreadNode::~ThreadNode() 
 {}
 
 void ThreadNode::run(std::string algName)
 {
-    auto start = std::chrono::high_resolution_clock::now();
-    auto now = std::chrono::high_resolution_clock::now();
-    auto timer = std::chrono::duration_cast<std::chrono::milliseconds>(now - start);   
-    auto end = std::chrono::milliseconds(_duration * 1000);
+    // printTestInfo(getID(), "Running...", -1, -1, -1, -1);
+    this->_algorithmType = algName;
 
-    if(algName == "hot")
-    {
-        // create the reciever thread and pass it the thread_recv function
-        // of this node
+    _thread_mtx.lock();
+    auto start = high_resolution_clock::now();
+    auto now = high_resolution_clock::now();
+    _thread_mtx.unlock();
+
+    auto timer = duration_cast<milliseconds>(now - start);   
+    auto end = milliseconds(_duration * 1000);
+
+    // create the reciever thread and pass it the thread_recv function
+    // of this node
+    //
+    std::thread reciever(&ThreadNode::thread_recv, this);
+
+
+    // time the sending for each thread based on the _duration till "end"
+    while(timer <= end) {
+        // the running of each send THREAD needs to be staggered by the EXECUTION_CYCLE time
+        // by adding the EXECUTION time with the node's ID times the EXECUTION_CYCLE and 
+        // the total number of nodes
+        //                                                ID * EXECUTION_CYCLE
+        //      EXECUTION_SLEEP_TIME = EXECUTION_CYCLE + ---------------------
+        //                                                    TOTAL_NODES
+        //  EX:
+        //                                        0 * EXECUTION_CYCLE
+        //      EST(NODE(0)) = EXECUTION_CYCLE + --------------------- = EXECUTION_CYCLE
+        //                                            TOTAL_NODES
         //
-        // TODO ->  based on our implementation of which algorithm to use
-        //          this may take a function pointer as well
-        std::thread reciever(&ThreadNode::thread_recv, this);
+        std::this_thread::sleep_for(std::chrono::milliseconds(EXECUTION_CYCLE + (getID() * EXECUTION_CYCLE) / getTotalNodes() ) );
 
+        // randSleep is the old Implementation of the HOT_POTATO algorithm
+        // randSleep(SLEEP);
 
-        // time the sending for each thread based on the _duration till "end"
-        while(timer <= end) {
-            // the running of each send THREAD needs to be staggered by the EXECUTION_CYCLE time
-            // by adding the EXECUTION time with the node's ID times the EXECUTION_CYCLE and 
-            // the total number of nodes
-            //                                                ID * EXECUTION_CYCLE
-            //      EXECUTION_SLEEP_TIME = EXECUTION_CYCLE + ---------------------
-            //                                                    TOTAL_NODES
-            //  EX:
-            //                                        0 * EXECUTION_CYCLE
-            //      EST(NODE(0)) = EXECUTION_CYCLE + --------------------- = EXECUTION_CYCLE
-            //                                            TOTAL_NODES
-            //
-            std::this_thread::sleep_for(std::chrono::milliseconds(EXECUTION_CYCLE + (getID() * EXECUTION_CYCLE) / getTotalNodes() ) );
-
-            // randSleep is the old Implementation of the HOT_POTATO algorithm
-            // randSleep(SLEEP);
-
-            thread_send(createMessage());
-            incrMsgSent(1);
-
-            std::lock_guard<std::mutex> lock(_thread_mtx);
-            now = std::chrono::high_resolution_clock::now();
-            timer = std::chrono::duration_cast<std::chrono::milliseconds>(now - start);
+        // depending on whichever algorithm chosen we need to either use the
+        // getRandom or findTrail methods
+        if(algName == "hot"){
+            thread_send(createMessage(&ThreadNode::getRandomNeighbor));
         }
+        else if(algName == "ant"){
+            thread_send(createMessage(&ThreadNode::findTrail));
+        }
+        incrMsgSent(1);
 
-        // after the main threads are done we increment the message recieved
-        // because at the creation of the node we decremented by the number
-        // of threads created so that when we are running the other independent
-        // receive thread it starts at a deficit so it could not finish until
-        // the sending threads are done
-        //
-        // Once all main threads have finished the receive threads could then
-        // finish afterwards
-        incrMsgRecieved(1);
-
-        if(reciever.joinable())
-            reciever.join();
-    }
-    else if(algName == "ant")
-    {
-        /** Do the ANT stuff */
+        std::lock_guard<std::mutex> lock(_thread_mtx);
+        now = high_resolution_clock::now();
+        timer = duration_cast<milliseconds>(now - start);
     }
 
+    // after the main threads are done we increment the message recieved
+    // because at the creation of the node we decremented by the number
+    // of threads created so that when we are running the other independent
+    // receive thread it starts at a deficit so it could not finish until
+    // the sending threads are done
+    //
+    // Once all main threads have finished the receive threads could then
+    // finish afterwards
+    incrMsgRecieved(1);
+
+    if(reciever.joinable())
+        reciever.join();
 }
 
-uint16_t ThreadNode::passPotato(uint16_t transmittor, uint16_t destination)
+MessagePacket ThreadNode::passPotato(MessagePacket msg)
 {
-    // printTestInfo(getID(), "passPotato", -1, -1, -1, -1);
+    msg.incHopCount();
 
-    /* TODO can put more code in here for specifically passing a potato
-        Whatever we can move from thread_send where we are passing the 
-        potato can go here
-    */
-    return getRandomNeighbor(transmittor, destination);
+    // Choose new neighbor as a receiver to pass the message that was not meant for
+    // this node. New neighbor must not be the previous sender
+    uint16_t from = msg.getTransmittor();		// previous sender
+    uint16_t dest = msg.getDestination();		// final destination
+    uint16_t receiver = getRandomNeighbor(from, dest);
+    msg.setReceiver(receiver);
+    msg.setTransmittor(getID());
+
+    printTestInfo(getID(), "Pass Potato", msg.getSender(), msg.getTransmittor(), msg.getReceiver(), msg.getDestination());
+
+    return msg;
+}
+
+MessagePacket ThreadNode::moveAnt(MessagePacket msg)
+{
+    msg.incHopCount();
+    dilutePheromones();
+    incrPheromone(msg.getTransmittor());
+
+    // Choose new neighbor as a receiver to pass the message that was not meant for
+    // this node. New neighbor must not be the previous sender
+    uint16_t from = msg.getTransmittor();		// previous sender
+    uint16_t dest = msg.getDestination();		// final destination
+    uint16_t receiver = findTrail(from, dest);
+    msg.setReceiver(receiver);
+    msg.setTransmittor(getID());
+
+    printTestInfo(getID(), "Ant on The Move", msg.getSender(), msg.getTransmittor(), msg.getReceiver(), msg.getDestination());
+
+    return msg;
+}
+
+void ThreadNode::incrPheromone(uint16_t from)
+{
+    // add to the pheromone based on an ant walking acrosse the edge
+    _edges[from] = pow(_edges[from] + INCR_PHEROMONE, POWER_COEFF);
+
+    // since an ant just walked on the edge restart the half-life clock
+    _thread_mtx.lock();
+    _edge_times[from] = high_resolution_clock::now();
+    _thread_mtx.unlock();
+}
+
+void ThreadNode::dilutePheromones()
+{
+    printTestInfo(getID(), "Dilution:", -1, -1, -1, -1);
+    for(auto &it : _edges){
+        // start is the last time an ant walked on the edge or
+        // the last time a message was received from this neighbor
+        auto start = _edge_times[it.first];
+
+        std::lock_guard<std::mutex> lock(_thread_mtx);
+        auto now = high_resolution_clock::now();
+        auto duration = duration_cast<milliseconds>(now - start);
+        it.second = pow(it.second / 2, (duration.count()) / DILUTION_HALF_LIFE);
+        std::cout << "key - " << it.first << " - value -" << it.second << " - time - " << duration.count() << std::endl;
+    }
 }
 
 uint16_t ThreadNode::thread_send(MessagePacket msg)
@@ -135,13 +191,13 @@ uint16_t ThreadNode::thread_send(MessagePacket msg)
     return bytes;
 }
 
-MessagePacket ThreadNode::createMessage()
+MessagePacket ThreadNode::createMessage(uint16_t (ThreadNode::*passAlgorithm)(uint16_t prev, uint16_t dest))
 {
     // printTestInfo(getID(), "createMessage", -1, -1, -1, -1);
     // create a message and get a random neighbor to send that
     // message to
     uint16_t random_dest = createDestination(0, getTotalNodes() - 1);
-    uint16_t random_recv = getRandomNeighbor(getID(), random_dest);
+    uint16_t random_recv = (*this.*passAlgorithm)(getID(), random_dest);
     MessagePacket msg(getID(), random_dest, random_recv);
 
     printTestInfo(getID(), "Sending", getID(), getID(), msg.getReceiver(), msg.getDestination());
@@ -176,7 +232,7 @@ uint16_t ThreadNode::createDestination(uint16_t min, uint16_t max) const
     return destination;
 }
 
-uint16_t ThreadNode::getRandomNeighbor(uint16_t prevSender, uint16_t destination) const
+uint16_t ThreadNode::getRandomNeighbor(uint16_t prevSender, uint16_t destination)
 {
     // printTestInfo(getID(), "getRandomNeighbor", -1, -1, -1, -1);
     
@@ -202,6 +258,40 @@ uint16_t ThreadNode::getRandomNeighbor(uint16_t prevSender, uint16_t destination
     return random_recv;
 }
 
+uint16_t ThreadNode::findTrail(uint16_t prevSender, uint16_t dest)
+{
+    /* First check to see if the destination is one of this nodes neighbors **/
+    uint16_t antTrail = getID();
+    // std::vector<uint16_t>::const_iterator neighbor;
+    // std::cout << getNbors() << std::endl;
+    for(auto &neighbor : getNbors()) {//= getNbors().begin(); neighbor != getNbors().end(); neighbor++){
+        // printTestInfo(getID(), "Not accessing in trail", -1, -1, -1, -1);
+        // printTestInfo(getID(), "Trailing .. ", neighbor, dest, antTrail, -1);
+        if(neighbor == dest){
+            antTrail = neighbor;
+            break;
+        }
+    }
+
+    for(auto &edge : _edges) {//= getNbors().begin(); neighbor != getNbors().end(); neighbor++){
+        // printTestInfo(getID(), "Not accessing in trail", -1, -1, -1, -1);
+    }
+
+    /* If the random receiver is still this nodes ID then we know the destination
+        is not among this nodes neighbors.  Get a randomNeighbor from the random
+        nodes class
+    */
+    if(antTrail == this->getID()){
+        // find a random neighbor and set equal to destination
+        _thread_mtx.lock();
+        antTrail = RandomNodes::getPheromoneNeighbor(prevSender, _edges, _generator);
+        _thread_mtx.unlock();
+    }
+
+    return antTrail;
+
+}
+
 void ThreadNode::thread_recv()
 {
     // printTestInfo(getID(), "Other Thread", -1, -1, -1, -1);
@@ -215,7 +305,13 @@ void ThreadNode::thread_recv()
     while(!stopReceiving){
         // printTestInfo(getID(), "In loop", -1, -1, -1, -1);
         try{
-            receive();
+            if(_algorithmType == "hot"){
+                receive(&ThreadNode::passPotato);
+            }
+            else if (_algorithmType == "ant")
+            {
+                receive(&ThreadNode::moveAnt);
+            }
             
             if(hasReceivedAllMsgs()){
                 std::lock_guard<std::mutex> lock(_thread_mtx);
@@ -229,7 +325,7 @@ void ThreadNode::thread_recv()
     }
 } // end thread_recv
 
-void ThreadNode::receive()
+void ThreadNode::receive(MessagePacket (ThreadNode::*passAlgorithm)(MessagePacket msg))
 {
     // if bytes are 0 then there wasn't anything in the buffer
     // return
@@ -252,18 +348,8 @@ void ThreadNode::receive()
     } else {
         // Cool down for a random time
         randCool(COOL);
-        temp.incHopCount();
-
-        // Choose new neighbor as a receiver to pass the message that was not meant for
-        // this node. New neighbor must not be the previous sender
-        uint16_t from = temp.getTransmittor();		// previous sender
-        uint16_t dest = temp.getDestination();		// final destination
-        uint16_t receiver = passPotato(from, dest);
-        temp.setReceiver(receiver);
-        temp.setTransmittor(getID());
-
-        printTestInfo(getID(), "Pass Potato", temp.getSender(), temp.getTransmittor(), temp.getReceiver(), temp.getDestination());
-        thread_send(temp);
+        MessagePacket forwardMessage = (*this.*passAlgorithm)(temp);
+        thread_send(forwardMessage);
     }
 }
 
@@ -321,6 +407,10 @@ void ThreadNode::recordMessage(MessagePacket msg)
     // record the messages hops and time
     Node::_total_hops += msg.getHopCount();
     _total_time += msg.getFinalTimeInterval();
+
+    if(_algorithmType == "ant"){
+        incrPheromone(msg.getTransmittor());
+    }
 }
 
 bool ThreadNode::hasReceivedAllMsgs() const
@@ -357,3 +447,19 @@ void ThreadNode::printTestInfo(uint16_t id, std::string action, uint16_t sender,
             << " -> (" << std::to_string(_messages_sent) << ":" << std::to_string(_messages_recieved) << ")" << std::endl;
     _thread_mtx.unlock();
 }
+
+std::map<uint16_t, double> ThreadNode::getEdges() const
+{
+    return _edges;
+}
+
+std::map<uint16_t, time_point<high_resolution_clock>> ThreadNode::getEdgeTimes() const
+{
+    return _edge_times;
+}
+
+unsigned int ThreadNode::getDuration() const
+{
+    return _duration;
+}
+
