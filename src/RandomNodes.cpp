@@ -55,7 +55,7 @@ uint16_t RandomNodes::getPheromoneNeighbor(uint16_t prev, const std::map<uint16_
         nborIndex = rand_discrete(discretValues, gen);
     }
     else{
-        keys[nborIndex] = prev;
+        keys.push_back(prev);
     }
 
     return keys.at(nborIndex);

@@ -3,11 +3,8 @@
 std::default_random_engine ThreadNode::_generator;
 std::mutex ThreadNode::_thread_mtx;
 std::condition_variable ThreadNode::_thread_cv;
-// time_point<high_resolution_clock> ThreadNode::_thread_start_t;
 bool ThreadNode::_stopRecieving;
 
-// uint16_t (ThreadNode::*getRandomNeighbor)(uint16_t, uint16_t) = NULL;
-// uint16_t (ThreadNode::*findTrail)(uint16_t, uint16_t) = NULL;
 
 int ThreadNode::_messages_sent = 0;
 int ThreadNode::_messages_recieved = 0;
@@ -207,7 +204,7 @@ uint16_t ThreadNode::thread_send(MessagePacket msg)
 
 MessagePacket ThreadNode::createMessage(uint16_t (ThreadNode::*passAlgorithm)(uint16_t prev, uint16_t dest))
 {
-    // printTestInfo(getID(), "createMessage", -1, -1, -1, -1);
+    // printTestInfo(getID(), "Create Message", -1, -1, -1, -1);
     // create a message and get a random neighbor to send that
     // message to
     uint16_t random_dest = createDestination(0, getTotalNodes() - 1);
@@ -297,9 +294,9 @@ uint16_t ThreadNode::findTrail(uint16_t prevSender, uint16_t dest)
     if(antTrail == this->getID()){
         // find a random neighbor and set equal to destination
         // printTestInfo(getID(), "Before entering pheronome", -1, -1, -1, -1);
-        //_thread_mtx.lock();
+        _thread_mtx.lock();
         antTrail = RandomNodes::getPheromoneNeighbor(prevSender, _edges, POWER_COEFF, _generator);
-        //_thread_mtx.unlock();
+        _thread_mtx.unlock();
     }
 
     // printTestInfo(getID(), "After Random Pheromone", -1, -1, -1, -1);
@@ -317,28 +314,29 @@ void ThreadNode::thread_recv()
 
     while(!stopReceiving){
         // printTestInfo(getID(), "In loop", -1, -1, -1, -1);
-        try{
-            if(_algorithmType == "hot"){
-                receive(&ThreadNode::passPotato);
-            }
-            else if (_algorithmType == "ant")
-            {
-                receive(&ThreadNode::moveAnt);
-            }
-            
-            if(hasReceivedAllMsgs()){
-                _thread_mtx.lock();
-                ThreadNode::_stopRecieving = true;
-                _thread_mtx.unlock();
-
-                stopReceiving = ThreadNode::_stopRecieving;
-                
-            }
-        } catch (std::exception &e){
-            _thread_mtx.lock();
-            std::cout << "Thread - " << getID() << " - thread_recv - " << e.what() << std::endl;
-            _thread_mtx.unlock();
+        // try{
+        if(_algorithmType == "hot"){
+            receive(&ThreadNode::passPotato);
         }
+        else if (_algorithmType == "ant")
+        {
+            receive(&ThreadNode::moveAnt);
+        }
+        
+        // printTestInfo(getID(), "After Receive", -1, -1, -1, -1);
+        if(hasReceivedAllMsgs()){
+            _thread_mtx.lock();
+            ThreadNode::_stopRecieving = true;
+            _thread_mtx.unlock();
+
+            stopReceiving = ThreadNode::_stopRecieving;
+            
+        }
+        // } catch (std::exception &e){
+        //     _thread_mtx.lock();
+        //     std::cout << "Thread - " << getID() << " - thread_recv - " << e.what() << std::endl;
+        //     _thread_mtx.unlock();
+        // }
     }
 } // end thread_recv
 
@@ -346,10 +344,6 @@ void ThreadNode::receive(MessagePacket (ThreadNode::*passAlgorithm)(MessagePacke
 {
     // if bytes are 0 then there wasn't anything in the buffer
     // return
-    // if(mbox_empty(getID())){
-    //     return;
-    // }
-
     
     int rbytes = mbox_recv(getID(), &_buffer, MAX);
     if(rbytes <= 0)
@@ -362,7 +356,7 @@ void ThreadNode::receive(MessagePacket (ThreadNode::*passAlgorithm)(MessagePacke
     // If this is final destination:
     if (temp.getDestination() == getID())
     {
-        // printTestInfo(getID(), "Reached Destination", temp.getSender(), temp.getTransmittor(), temp.getReceiver(), temp.getDestination());
+        printTestInfo(getID(), "Reached Destination", temp.getSender(), temp.getTransmittor(), temp.getReceiver(), temp.getDestination());
         recordMessage(temp);
         incrMsgRecieved(1);
 
@@ -437,7 +431,6 @@ void ThreadNode::recordMessage(MessagePacket msg)
 
 bool ThreadNode::hasReceivedAllMsgs() const
 {
-    // printTestInfo(getID(), "hasReceivedAllMsgs", -1, -1, -1, -1);
     bool allMsgsReceived = false;
 
     // check to see if the number of messages received matches the number
@@ -446,7 +439,6 @@ bool ThreadNode::hasReceivedAllMsgs() const
     allMsgsReceived = _messages_recieved >= _messages_sent;
     _thread_mtx.unlock();
     
-
     // printTestInfo(getID(), "HAS RECEIVED ALL MSGS ", (uint16_t)allMsgsReceived, (uint16_t)_messages_recieved, (uint16_t)_messages_sent, -1);
 
     return allMsgsReceived;

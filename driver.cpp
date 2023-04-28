@@ -45,9 +45,9 @@ int main(int argc, char *argv[]){
 	std::vector<std::thread*> threads;		// Threads
 	analysis results = {0,0};
 
-	std::cout << "\nTest - " << parameters.filename 
-			<< " - duration - " << parameters.optionD << "s"
-			<< " - Algorithm - " << parameters.optionR << std::endl;
+	std::cout << "\nTest - (" << parameters.filename  << ")"
+			<< " - duration - (" << parameters.optionD << "s)"
+			<< " - Algorithm - (" << parameters.optionR << ")" << std::endl;
 
 	createNodes(nodes, graph, parameters.optionD);
 	runThreads(threads, nodes, parameters.optionR);
