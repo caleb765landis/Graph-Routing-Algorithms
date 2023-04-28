@@ -17,17 +17,21 @@ struct analysis{
 	double time;
 };
 
+struct options{
+	unsigned int optionD;
+	std::string optionR;
+	std::string filename;
+};
+
 void analyzeResults(std::vector<ThreadNode> nodes, analysis &results);
 void createNodes(std::vector<ThreadNode> &nodes, ThreadGraph graph, unsigned int duration);
 void runThreads(std::vector<std::thread*> &t, std::vector<ThreadNode> &nodes, std::string algName);
 void joinThreads(std::vector<std::thread*> &threads);
+options getOptions(int argc, char *argv[]);
 
 int main(int argc, char *argv[]){
 
-	double optionD = 3; 					// <-- TODO get value from main arguments
-	// char optionR[] = {'h','o','t'}; 		// <-- TODO get value from main arguments
-	char optionR[] = {'a','n','t'}; 		// <-- TODO get value from main arguments
-	std::string filename = "./graph/A10.dat";	// <-- TODO get value from main arguments
+	options parameters = getOptions(argc, argv);
 
 	// output stream for storing the graphs analysis
 
@@ -36,21 +40,23 @@ int main(int argc, char *argv[]){
 	// analysisFile << "Graph, Nodes, Edges, Hops, Node-Edge Ratio, Time, \n";
 
 
-	ThreadGraph graph(filename);
+	ThreadGraph graph(parameters.filename);
 	std::vector<ThreadNode> nodes;			// Node objects
 	std::vector<std::thread*> threads;		// Threads
 	analysis results = {0,0};
 
-	std::cout << "\nTest - " << filename << " - duration - " << optionD << "s"<< std::endl;
+	std::cout << "\nTest - " << parameters.filename 
+			<< " - duration - " << parameters.optionD << "s"
+			<< " - Algorithm - " << parameters.optionR << std::endl;
 
-	createNodes(nodes, graph, optionD);
-	runThreads(threads, nodes, optionR);
+	createNodes(nodes, graph, parameters.optionD);
+	runThreads(threads, nodes, parameters.optionR);
 	joinThreads(threads);
 	analyzeResults(nodes, results);
 
 	// print the totals for the graph and reset the static counting variables for the
 	// group of threads.
-	std::cout 	<< "Graph (" << filename 
+	std::cout 	<< "Graph (" << parameters.filename 
 				<< ") - Total Hops - " << results.hops 
 				<< " - Total Time - " << results.time << " ms\n";
 	
@@ -114,4 +120,37 @@ void analyzeResults(std::vector<ThreadNode> nodes, analysis &results)
 		std::cout << "Node (" << i << ") - Hop Count - " << p.first << " - Time - " << p.second << " ms\n";
 	}
 }
+
+options getOptions(int argc, char *argv[])
+{
+	options parameters;
+	parameters.filename = "./graph/A10.dat";
+	parameters.optionD = 10;
+	parameters.optionR = "ant";
+
+	for(int i = 0; i < argc; i++){
+		if(argv[i] == "-d"){
+			parameters.optionD = std::stoi(argv[i + 1]);
+		}
+		if(argv[i] == "-r"){
+			if(argv[i + 1] == "hot" || argv[i + 1] == "ant"){
+				parameters.optionR = argv[i + 1];
+			}
+			else{
+				throw std::invalid_argument("-r option needs to be -r <hot|ant>");
+			}
+		}
+	}
+
+	std::string temp = argv[argc - 1];
+	if(temp.find(".dat") > temp.length() || temp.find("./graph/A") > temp.length()){
+		throw std::invalid_argument("filename needs to follow the structure: ./graph/A[10:50].dat");
+	}
+	else{
+		parameters.filename = temp;
+	}
+
+	return parameters;
+}
+
 
