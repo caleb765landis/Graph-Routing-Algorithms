@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <random>
+#include <mutex>
 #include <vector>
 #include <map>
 
@@ -16,8 +17,10 @@ class RandomNodes
 		static uint16_t getPheromoneNeighbor(uint16_t previos, std::map<uint16_t, double> edges, double powCoeff, std::default_random_engine &gen);
 		static double rand_exponential(double mean, std::default_random_engine &gen);
 		static uint16_t rand_uniform(uint16_t min, uint16_t max, std::default_random_engine &gen);
-		static double rand_discrete(std::vector<double> edges, std::default_random_engine &gen);
+		static uint16_t rand_discrete(std::vector<double> edges, std::default_random_engine &gen);
 		static std::default_random_engine _generator;
+	private:
+		static std::mutex _generator_mutex;
 };
 
 

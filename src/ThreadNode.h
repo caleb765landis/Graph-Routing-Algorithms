@@ -12,7 +12,7 @@
 #define COOL 50
 #define EXECUTION_CYCLE 500
 
-#define INIT_PHEROMONE 2.50
+#define INIT_PHEROMONE 5.50
 #define INCR_PHEROMONE 1.50
 #define POWER_COEFF 2.24
 #define DILUTION_HALF_LIFE 1000
@@ -88,6 +88,7 @@ class ThreadNode : public Node
 		void randCool(double mean);
 
 		void printTestInfo(uint16_t id, std::string action, uint16_t sender, uint16_t trans, uint16_t recv, uint16_t destination) const;
+		void printRunInfo() const;
 };
 
 #endif

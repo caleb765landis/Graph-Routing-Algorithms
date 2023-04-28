@@ -1,25 +1,35 @@
 #include "TimeInterval.h"
 
+std::mutex TimeInterval::_time_mutex;
+
 TimeInterval::TimeInterval(){}
 
 void TimeInterval::start()
 {
+        _time_mutex.lock();
         gettimeofday(&this->start_time, NULL);
+        _time_mutex.unlock();
 }
 
 void TimeInterval::stop()
 {
+        _time_mutex.lock();
         gettimeofday(&this->end_time, NULL);
+        _time_mutex.unlock();
 }
 
 void TimeInterval::chronoStart()
 {
+        _time_mutex.lock();
         _start_time = high_resolution_clock::now();
+        _time_mutex.unlock();
 }
 
 void TimeInterval::chronoStop()
 {
+        _time_mutex.lock();
         _end_time = high_resolution_clock::now();
+        _time_mutex.unlock();
 }
 
 double TimeInterval::GetInterval()
@@ -59,4 +69,13 @@ TimeInterval TimeInterval::operator=(const TimeInterval& other){
         this->start_time = other.getStartTime();
         this->end_time = other.getEndTime();
         return *this;
+}
+
+time_point<high_resolution_clock> TimeInterval::getNow()
+{
+        _time_mutex.lock();
+        auto now = high_resolution_clock::now();
+        _time_mutex.unlock();
+
+        return now;
 }

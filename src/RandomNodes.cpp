@@ -1,5 +1,6 @@
 #include "RandomNodes.h"
 
+std::mutex RandomNodes::_generator_mutex;
 
 // uint16_t RandomNodes::getRandomNeighbor(std::vector<uint16_t> nbors, std::default_random_engine &gen)
 // {
@@ -69,7 +70,9 @@ double RandomNodes::rand_exponential(double mean, std::default_random_engine &ge
 
     // get a random number fron that distribution based on
     // the static generator
+    _generator_mutex.lock();
     double randNumber = expDistro(gen);
+    _generator_mutex.unlock();
 
     return randNumber;
 }
@@ -81,14 +84,20 @@ uint16_t RandomNodes::rand_uniform(uint16_t min, uint16_t max, std::default_rand
 
     // get a random number from that distribution based on
     // the static generator
+    _generator_mutex.lock();
     uint16_t randNumber = uniDistro(gen);
+    _generator_mutex.unlock();
 
     return randNumber;
 }
 
-double RandomNodes::rand_discrete(std::vector<double> edges, std::default_random_engine &gen)
+uint16_t RandomNodes::rand_discrete(std::vector<double> edges, std::default_random_engine &gen)
 {
     std::discrete_distribution<int> discDistro(edges.begin(), edges.end());
 
-    return discDistro(gen);
+    _generator_mutex.lock();
+    uint16_t randomEdge = discDistro(gen);
+    _generator_mutex.unlock();
+
+    return randomEdge;
 }

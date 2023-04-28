@@ -3,6 +3,7 @@
 
 #include <sys/time.h>
 #include <chrono>
+#include <mutex>
 #include <cstddef>
 
 using namespace std::chrono;
@@ -21,6 +22,8 @@ public:
         void stop();
         void chronoStop();
 
+        static time_point<high_resolution_clock> getNow();
+
         void setTimes(double st, double ft);
         timeval getStartTime() const;
         timeval getEndTime() const;
@@ -29,6 +32,9 @@ public:
         time_point<high_resolution_clock> projectedEnd(int seconds) const;
 
         TimeInterval operator=(const TimeInterval& other);
+
+        private:
+                static std::mutex _time_mutex;
 };
 
 #endif //!defined TimeInterval

@@ -21,14 +21,13 @@ ThreadNode::ThreadNode(uint16_t id, std::vector<uint16_t> neighbors, uint16_t to
     if(id == 0)
     {
         _generator.seed(std::chrono::system_clock::now().time_since_epoch().count());
-        // _thread_start_t = high_resolution_clock::now();
         _stopRecieving = false;
     }
 
     // initiallize the node edges for pheromones
     for(auto &it : neighbors){
         _edges[it] = pow(INIT_PHEROMONE, POWER_COEFF);
-        _edge_times[it] = high_resolution_clock::now();
+        _edge_times[it] = TimeInterval::getNow();
     }
     // Decrementing the _messages_recieved based on the number of nodes created
     // so the independant Receive threads will not finish until the main threads
@@ -51,10 +50,8 @@ void ThreadNode::run(std::string algName)
     // printTestInfo(getID(), "Running...", -1, -1, -1, -1);
     this->_algorithmType = algName;
 
-    _thread_mtx.lock();
-    auto start = high_resolution_clock::now();
-    auto now = high_resolution_clock::now();
-    _thread_mtx.unlock();
+    auto start = TimeInterval::getNow();
+    auto now = TimeInterval::getNow();
 
     auto timer = duration_cast<milliseconds>(now - start);   
     auto end = milliseconds(_duration * 1000);
@@ -94,9 +91,7 @@ void ThreadNode::run(std::string algName)
             incrMsgSent(1);
         }
 
-        _thread_mtx.lock();
-        now = high_resolution_clock::now();
-        _thread_mtx.unlock();
+        now = TimeInterval::getNow();
         timer = duration_cast<milliseconds>(now - start);
     }
 
@@ -159,11 +154,9 @@ void ThreadNode::incrPheromone(uint16_t from)
     // printTestInfo(getID(), "incrPheronome", -1, -1, -1, -1);
     // add to the pheromone based on an ant walking acrosse the edge
     _edges[from] += INCR_PHEROMONE;
-
+    _edge_times[from] = TimeInterval::getNow();
     // since an ant just walked on the edge restart the half-life clock
-    _thread_mtx.lock();
-    _edge_times[from] = high_resolution_clock::now();
-    _thread_mtx.unlock();
+
 }
 
 void ThreadNode::dilutePheromones()
@@ -173,19 +166,12 @@ void ThreadNode::dilutePheromones()
         // start is the last time an ant walked on the edge or
         // the last time a message was received from this neighbor
         auto start = _edge_times[it.first];
-
-        _thread_mtx.lock();
-        auto now = high_resolution_clock::now();
-        _thread_mtx.unlock();
+        auto now = TimeInterval::getNow();
 
         auto duration = duration_cast<milliseconds>(now - start);
-        _thread_mtx.lock();
-        // std::cout << "Prior:   key - " << it.first << " - value - " << it.second << " - time - " << duration.count() << std::endl;
         it.second = it.second * pow( 0.5, ((duration.count()/DILUTION_HALF_LIFE)));
         if(it.second < INIT_PHEROMONE)
             it.second = INIT_PHEROMONE; 
-        // std::cout << "Diluted: key - " << it.first << " - value - " << it.second << " - time - " << duration.count() << std::endl;
-        _thread_mtx.unlock();
     }
 }
 
@@ -214,9 +200,7 @@ MessagePacket ThreadNode::createMessage(uint16_t (ThreadNode::*passAlgorithm)(ui
     printTestInfo(getID(), "Sending", getID(), getID(), msg.getReceiver(), msg.getDestination());
 
     // Set current time as start of keeping track of how long message is in network
-    _thread_mtx.lock();
     msg.timeStart();
-    _thread_mtx.unlock();
 
     return msg;
 }
@@ -232,14 +216,9 @@ uint16_t ThreadNode::createDestination(uint16_t min, uint16_t max) const
     // get a random number from a uniform distribution in the range
     // of min to max which should be 0 and total number of nodes in
     // the graph - 1
-    _thread_mtx.lock();
     uint16_t destination = RandomNodes::rand_uniform(min, max, _generator);
-    _thread_mtx.unlock();
-    if(destination == getID()){
-        _thread_mtx.lock();
+    if(destination == getID())
         destination = RandomNodes::rand_uniform(min, max, _generator);
-        _thread_mtx.unlock();
-    }
 
     
     return destination;
@@ -275,11 +254,7 @@ uint16_t ThreadNode::findTrail(uint16_t prevSender, uint16_t dest)
 {
     /* First check to see if the destination is one of this nodes neighbors **/
     uint16_t antTrail = getID();
-    // std::vector<uint16_t>::const_iterator neighbor;
-    // std::cout << getNbors() << std::endl;
-    for(auto &neighbor : getNbors()) {//= getNbors().begin(); neighbor != getNbors().end(); neighbor++){
-        // printTestInfo(getID(), "Not accessing in trail", -1, -1, -1, -1);
-        // printTestInfo(getID(), "Trailing .. ", neighbor, dest, antTrail, -1);
+    for(auto &neighbor : getNbors()) {
         if(neighbor == dest){
             antTrail = neighbor;
             break;
@@ -293,37 +268,27 @@ uint16_t ThreadNode::findTrail(uint16_t prevSender, uint16_t dest)
     */
     if(antTrail == this->getID()){
         // find a random neighbor and set equal to destination
-        // printTestInfo(getID(), "Before entering pheronome", -1, -1, -1, -1);
-        _thread_mtx.lock();
         antTrail = RandomNodes::getPheromoneNeighbor(prevSender, _edges, POWER_COEFF, _generator);
-        _thread_mtx.unlock();
     }
 
-    // printTestInfo(getID(), "After Random Pheromone", -1, -1, -1, -1);
     return antTrail;
 
 }
 
 void ThreadNode::thread_recv()
 {
-    // printTestInfo(getID(), "Other Thread", -1, -1, -1, -1);
-
     _thread_mtx.lock();
     bool stopReceiving = ThreadNode::_stopRecieving;
     _thread_mtx.unlock();
 
     while(!stopReceiving){
-        // printTestInfo(getID(), "In loop", -1, -1, -1, -1);
-        // try{
-        if(_algorithmType == "hot"){
+        if(_algorithmType == "hot")
             receive(&ThreadNode::passPotato);
-        }
         else if (_algorithmType == "ant")
-        {
             receive(&ThreadNode::moveAnt);
-        }
         
-        // printTestInfo(getID(), "After Receive", -1, -1, -1, -1);
+        // if threads have received all messages then it is time to
+        // stop receiving
         if(hasReceivedAllMsgs()){
             _thread_mtx.lock();
             ThreadNode::_stopRecieving = true;
@@ -332,11 +297,6 @@ void ThreadNode::thread_recv()
             stopReceiving = ThreadNode::_stopRecieving;
             
         }
-        // } catch (std::exception &e){
-        //     _thread_mtx.lock();
-        //     std::cout << "Thread - " << getID() << " - thread_recv - " << e.what() << std::endl;
-        //     _thread_mtx.unlock();
-        // }
     }
 } // end thread_recv
 
@@ -381,8 +341,6 @@ void ThreadNode::incrMsgSent(unsigned int incr)
 
 void ThreadNode::incrMsgRecieved(unsigned int incr)
 {
-    // printTestInfo(getID(), "incrMsgReceived", -1, -1, -1, -1);
-
     // increment the messages received by the increment variable
     _thread_mtx.lock();
     this->_messages_recieved += incr;
@@ -391,34 +349,22 @@ void ThreadNode::incrMsgRecieved(unsigned int incr)
 
 void ThreadNode::randSleep(double mean)
 {
-    // printTestInfo(getID(), "randSleep", -1, -1, -1, -1);
-
     // choose a random number for the node to sleep
-    _thread_mtx.lock();
     int randNumber = (int)(RandomNodes::rand_exponential(mean, _generator) * 1000);
-    _thread_mtx.unlock();
-
     std::this_thread::sleep_for(std::chrono::milliseconds(randNumber));
 }
 
 void ThreadNode::randCool(double mean)
 {
-    // printTestInfo(getID(), "randCool", -1, -1, -1, -1);
-
     // choose a random number for the node to cool
-    _thread_mtx.lock();
     int randNumber = (int)(RandomNodes::rand_exponential(mean, _generator) * 1000);
-    _thread_mtx.unlock();
     std::this_thread::sleep_for(std::chrono::milliseconds(randNumber));
 }
 
 void ThreadNode::recordMessage(MessagePacket msg)
 {
-    // printTestInfo(getID(), "recordMessages", msg.getSender(), msg.getTransmittor(), msg.getReceiver(), msg.getDestination());
     // Stop message timer
-    _thread_mtx.lock();
     msg.timeStop();
-    _thread_mtx.unlock();
 
     // record the messages hops and time
     Node::_total_hops += msg.getHopCount();
@@ -446,13 +392,13 @@ bool ThreadNode::hasReceivedAllMsgs() const
 
 void ThreadNode::printTestInfo(uint16_t id, std::string action, uint16_t sender, uint16_t trans, uint16_t recv, uint16_t dest) const
 {
-    // print test information for depugging
-    _thread_mtx.lock();
-    std::cout << "Thread - "<< std::to_string(id) << " - " << action 
-            << " - Sender - " << std::to_string(sender) << " - Transmittor - " << std::to_string(trans)
-            << " - Receiver - " << std::to_string(recv) << " - Dest - " << std::to_string(dest)
-            << " -> (" << std::to_string(_messages_sent) << ":" << std::to_string(_messages_recieved) << ")" << std::endl;
-    _thread_mtx.unlock();
+    // // print test information for depugging
+    // _thread_mtx.lock();
+    // std::cout << "Thread - "<< std::to_string(id) << " - " << action 
+    //         << " - Sender - " << std::to_string(sender) << " - Transmittor - " << std::to_string(trans)
+    //         << " - Receiver - " << std::to_string(recv) << " - Dest - " << std::to_string(dest)
+    //         << " -> (" << std::to_string(_messages_sent) << ":" << std::to_string(_messages_recieved) << ")" << std::endl;
+    // _thread_mtx.unlock();
 }
 
 std::map<uint16_t, double> ThreadNode::getEdges() const
@@ -470,3 +416,42 @@ unsigned int ThreadNode::getDuration() const
     return _duration;
 }
 
+void ThreadNode::printRunInfo() const
+{
+
+/* Code written by leemes, user: 592323 published by stack overflow
+    Ref: https://stackoverflow.com/questions/14539867/how-to-display-a-progress-indicator-in-pure-c-c-cout-printf*/
+    if(getID() == 0){
+        _thread_mtx.lock();
+        float recvProgress = (float)_messages_recieved / _messages_sent;
+        _thread_mtx.unlock();
+
+        int barWidth = 70;
+        // while (recvProgress < 1.0) {
+            std::cout << "Messages Received: [";
+            int pos = barWidth * recvProgress;
+            
+            _thread_mtx.lock();    // <--------- Locked
+            for (int i = 0; i < barWidth; ++i) {
+                if (i < pos) 
+                    std::cout << "=";
+                else if (i == pos) 
+                    std::cout << ">";
+                else 
+                    std::cout << " ";
+            }
+            
+            std::cout << "] " << int(recvProgress * 100.0) << " %\r";
+            //std::cout.clear();
+            std::cout.flush();
+            
+            if(int(recvProgress*100) == 100)
+                std::cout << std::endl; // << "--------------- Progress Done --------------------" << std::endl;
+            
+            _thread_mtx.unlock();     // <-------- Unlocked
+
+
+
+}
+
+}
