@@ -90,14 +90,16 @@ void ThreadNode::run(std::string algName)
         // getRandom or findTrail methods
         if(algName == "hot"){
             thread_send(createMessage(&ThreadNode::getRandomNeighbor));
+            incrMsgSent(1);
         }
         else if(algName == "ant"){
             thread_send(createMessage(&ThreadNode::findTrail));
+            incrMsgSent(1);
         }
-        incrMsgSent(1);
 
-        std::lock_guard<std::mutex> lock(_thread_mtx);
+        _thread_mtx.lock();
         now = high_resolution_clock::now();
+        _thread_mtx.unlock();
         timer = duration_cast<milliseconds>(now - start);
     }
 
@@ -117,6 +119,7 @@ void ThreadNode::run(std::string algName)
 
 MessagePacket ThreadNode::passPotato(MessagePacket msg)
 {
+
     msg.incHopCount();
 
     // Choose new neighbor as a receiver to pass the message that was not meant for
@@ -134,10 +137,13 @@ MessagePacket ThreadNode::passPotato(MessagePacket msg)
 
 MessagePacket ThreadNode::moveAnt(MessagePacket msg)
 {
+    // printTestInfo(getID(), "Move Ant", -1, -1, -1, -1);
+
     msg.incHopCount();
     dilutePheromones();
     incrPheromone(msg.getTransmittor());
 
+    // printTestInfo(getID(), "Move Ant - After INCREMENT", -1, -1, -1, -1);
     // Choose new neighbor as a receiver to pass the message that was not meant for
     // this node. New neighbor must not be the previous sender
     uint16_t from = msg.getTransmittor();		// previous sender
@@ -153,8 +159,9 @@ MessagePacket ThreadNode::moveAnt(MessagePacket msg)
 
 void ThreadNode::incrPheromone(uint16_t from)
 {
+    // printTestInfo(getID(), "incrPheronome", -1, -1, -1, -1);
     // add to the pheromone based on an ant walking acrosse the edge
-    _edges[from] = pow(_edges[from] + INCR_PHEROMONE, POWER_COEFF);
+    _edges[from] += INCR_PHEROMONE;
 
     // since an ant just walked on the edge restart the half-life clock
     _thread_mtx.lock();
@@ -164,17 +171,24 @@ void ThreadNode::incrPheromone(uint16_t from)
 
 void ThreadNode::dilutePheromones()
 {
-    printTestInfo(getID(), "Dilution:", -1, -1, -1, -1);
+    // printTestInfo(getID(), "Dilution:", -1, -1, -1, -1);
     for(auto &it : _edges){
         // start is the last time an ant walked on the edge or
         // the last time a message was received from this neighbor
         auto start = _edge_times[it.first];
 
-        std::lock_guard<std::mutex> lock(_thread_mtx);
+        _thread_mtx.lock();
         auto now = high_resolution_clock::now();
+        _thread_mtx.unlock();
+
         auto duration = duration_cast<milliseconds>(now - start);
-        it.second = pow(it.second / 2, (duration.count()) / DILUTION_HALF_LIFE);
-        std::cout << "key - " << it.first << " - value -" << it.second << " - time - " << duration.count() << std::endl;
+        _thread_mtx.lock();
+        // std::cout << "Prior:   key - " << it.first << " - value - " << it.second << " - time - " << duration.count() << std::endl;
+        it.second = it.second * pow( 0.5, ((duration.count()/DILUTION_HALF_LIFE)));
+        if(it.second < INIT_PHEROMONE)
+            it.second = INIT_PHEROMONE; 
+        // std::cout << "Diluted: key - " << it.first << " - value - " << it.second << " - time - " << duration.count() << std::endl;
+        _thread_mtx.unlock();
     }
 }
 
@@ -222,12 +236,14 @@ uint16_t ThreadNode::createDestination(uint16_t min, uint16_t max) const
     // of min to max which should be 0 and total number of nodes in
     // the graph - 1
     _thread_mtx.lock();
-
     uint16_t destination = RandomNodes::rand_uniform(min, max, _generator);
-    if(destination == getID())
-        destination = RandomNodes::rand_uniform(min, max, _generator);
-
     _thread_mtx.unlock();
+    if(destination == getID()){
+        _thread_mtx.lock();
+        destination = RandomNodes::rand_uniform(min, max, _generator);
+        _thread_mtx.unlock();
+    }
+
     
     return destination;
 }
@@ -273,9 +289,6 @@ uint16_t ThreadNode::findTrail(uint16_t prevSender, uint16_t dest)
         }
     }
 
-    for(auto &edge : _edges) {//= getNbors().begin(); neighbor != getNbors().end(); neighbor++){
-        // printTestInfo(getID(), "Not accessing in trail", -1, -1, -1, -1);
-    }
 
     /* If the random receiver is still this nodes ID then we know the destination
         is not among this nodes neighbors.  Get a randomNeighbor from the random
@@ -283,11 +296,13 @@ uint16_t ThreadNode::findTrail(uint16_t prevSender, uint16_t dest)
     */
     if(antTrail == this->getID()){
         // find a random neighbor and set equal to destination
-        _thread_mtx.lock();
-        antTrail = RandomNodes::getPheromoneNeighbor(prevSender, _edges, _generator);
-        _thread_mtx.unlock();
+        // printTestInfo(getID(), "Before entering pheronome", -1, -1, -1, -1);
+        //_thread_mtx.lock();
+        antTrail = RandomNodes::getPheromoneNeighbor(prevSender, _edges, POWER_COEFF, _generator);
+        //_thread_mtx.unlock();
     }
 
+    // printTestInfo(getID(), "After Random Pheromone", -1, -1, -1, -1);
     return antTrail;
 
 }
@@ -296,11 +311,9 @@ void ThreadNode::thread_recv()
 {
     // printTestInfo(getID(), "Other Thread", -1, -1, -1, -1);
 
-    bool stopReceiving;
-    {
-        std::lock_guard<std::mutex> lock(_thread_mtx);
-        stopReceiving = ThreadNode::_stopRecieving;
-    }
+    _thread_mtx.lock();
+    bool stopReceiving = ThreadNode::_stopRecieving;
+    _thread_mtx.unlock();
 
     while(!stopReceiving){
         // printTestInfo(getID(), "In loop", -1, -1, -1, -1);
@@ -314,13 +327,17 @@ void ThreadNode::thread_recv()
             }
             
             if(hasReceivedAllMsgs()){
-                std::lock_guard<std::mutex> lock(_thread_mtx);
+                _thread_mtx.lock();
                 ThreadNode::_stopRecieving = true;
+                _thread_mtx.unlock();
+
                 stopReceiving = ThreadNode::_stopRecieving;
+                
             }
         } catch (std::exception &e){
-            std::lock_guard<std::mutex> lock(_thread_mtx);
+            _thread_mtx.lock();
             std::cout << "Thread - " << getID() << " - thread_recv - " << e.what() << std::endl;
+            _thread_mtx.unlock();
         }
     }
 } // end thread_recv
@@ -329,6 +346,11 @@ void ThreadNode::receive(MessagePacket (ThreadNode::*passAlgorithm)(MessagePacke
 {
     // if bytes are 0 then there wasn't anything in the buffer
     // return
+    // if(mbox_empty(getID())){
+    //     return;
+    // }
+
+    
     int rbytes = mbox_recv(getID(), &_buffer, MAX);
     if(rbytes <= 0)
         return;
@@ -340,7 +362,7 @@ void ThreadNode::receive(MessagePacket (ThreadNode::*passAlgorithm)(MessagePacke
     // If this is final destination:
     if (temp.getDestination() == getID())
     {
-        printTestInfo(getID(), "Reached Destination", temp.getSender(), temp.getTransmittor(), temp.getReceiver(), temp.getDestination());
+        // printTestInfo(getID(), "Reached Destination", temp.getSender(), temp.getTransmittor(), temp.getReceiver(), temp.getDestination());
         recordMessage(temp);
         incrMsgRecieved(1);
 
@@ -375,7 +397,7 @@ void ThreadNode::incrMsgRecieved(unsigned int incr)
 
 void ThreadNode::randSleep(double mean)
 {
-    printTestInfo(getID(), "randSleep", -1, -1, -1, -1);
+    // printTestInfo(getID(), "randSleep", -1, -1, -1, -1);
 
     // choose a random number for the node to sleep
     _thread_mtx.lock();
@@ -418,19 +440,12 @@ bool ThreadNode::hasReceivedAllMsgs() const
     // printTestInfo(getID(), "hasReceivedAllMsgs", -1, -1, -1, -1);
     bool allMsgsReceived = false;
 
-    try
-    {
-        _thread_mtx.lock();
-        allMsgsReceived = _messages_recieved >= _messages_sent;
-        _thread_mtx.unlock();
-    }
-    catch(const std::exception& e)
-    {
-        std::cerr << "Thread - " << getID() << " - Has Received All Msgs - " << e.what() << '\n';
-    }
-    
     // check to see if the number of messages received matches the number
     // of messages sent
+    _thread_mtx.lock();
+    allMsgsReceived = _messages_recieved >= _messages_sent;
+    _thread_mtx.unlock();
+    
 
     // printTestInfo(getID(), "HAS RECEIVED ALL MSGS ", (uint16_t)allMsgsReceived, (uint16_t)_messages_recieved, (uint16_t)_messages_sent, -1);
 

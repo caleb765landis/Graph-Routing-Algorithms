@@ -12,11 +12,10 @@
 #define COOL 50
 #define EXECUTION_CYCLE 500
 
-#define INIT_PHEROMONE 25.0
-#define INCR_PHEROMONE 1.2
-#define POWER_COEFF 1.02
-#define DILUTION_HALF_LIFE 5000
-
+#define INIT_PHEROMONE 2.50
+#define INCR_PHEROMONE 7.50
+#define POWER_COEFF 2.24
+#define DILUTION_HALF_LIFE 1000
 
 using namespace std::chrono;
 
