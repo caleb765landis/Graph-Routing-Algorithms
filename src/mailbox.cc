@@ -78,6 +78,7 @@ int MailBox::send(uint16_t msgID, const void *packet, int len){
 
 		// std::cout << msgID << " - MAILBOX SEND: " << msg << std::endl;
 		_mailboxes[msgID].push(pckt);
+		// std::cout << "Mailbox_Send - " << msgID << " - count - " << _mailboxes[msgID].size() << std::endl;
 	}
 
 	cvs[msgID].notify_all();
@@ -95,6 +96,7 @@ int MailBox::recv(uint16_t msgID, void *packet, int max){
 	// std::cerr << msgID << " - Mailbox - Receive" << std::endl;
 	// bool timedOut = cvs[msgID].wait_for(lk, std::chrono::milliseconds(200), [empty]{return !empty;});
 
+	// std::cout << "Mailbox_Recv - " << msgID << " - count - " << _mailboxes[msgID].size() << std::endl;
 	if(!(_mailboxes[msgID].empty())){
 		strcpy((char*)packet, _mailboxes[msgID].front().content);	
 		free(_mailboxes[msgID].front().content);
