@@ -126,15 +126,17 @@ options getOptions(int argc, char *argv[])
 	options parameters;
 	parameters.filename = "./graph/A10.dat";
 	parameters.optionD = 10;
-	parameters.optionR = "ant";
+	parameters.optionR = "hot";
 
 	for(int i = 0; i < argc; i++){
-		if(argv[i] == "-d"){
+		std::string temp = argv[i];
+		if(temp == "-d"){
 			parameters.optionD = std::stoi(argv[i + 1]);
 		}
-		if(argv[i] == "-r"){
-			if(argv[i + 1] == "hot" || argv[i + 1] == "ant"){
-				parameters.optionR = argv[i + 1];
+		if(temp == "-r"){
+			std::string temp2 = argv[i + 1];
+			if(temp2 == "hot" || temp2 == "ant"){
+				parameters.optionR = temp2;
 			}
 			else{
 				throw std::invalid_argument("-r option needs to be -r <hot|ant>");
@@ -142,12 +144,14 @@ options getOptions(int argc, char *argv[])
 		}
 	}
 
-	std::string temp = argv[argc - 1];
-	if(temp.find(".dat") > temp.length() || temp.find("./graph/A") > temp.length()){
-		throw std::invalid_argument("filename needs to follow the structure: ./graph/A[10:50].dat");
-	}
-	else{
-		parameters.filename = temp;
+	if(argc > 0){
+		std::string temp = argv[argc - 1];
+		if(temp.find(".dat") > temp.length() || temp.find("./graph/A") > temp.length()){
+			throw std::invalid_argument("filename needs to follow the structure: ./graph/A[10:50].dat");
+		}
+		else{
+			parameters.filename = temp;
+		}
 	}
 
 	return parameters;
