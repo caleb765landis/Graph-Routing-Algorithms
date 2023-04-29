@@ -49,6 +49,14 @@ int main(int argc, char *argv[]){
 			<< " - duration - (" << parameters.optionD << "s)"
 			<< " - Algorithm - (" << parameters.optionR << ")" << std::endl;
 
+	if(parameters.optionR == "ant"){
+		std::cout 	<< "Initial Pheromone - \t\t" << INIT_PHEROMONE
+					<< "\nPheromone Increment Constant - \t" << INCR_PHEROMONE
+					<< "\nPower Coefficient - \t\t" << POWER_COEFF
+					<< "\nDilution Half Life - \t\t" << DILUTION_HALF_LIFE << std::endl;
+
+	}
+
 	createNodes(nodes, graph, parameters.optionD);
 	runThreads(threads, nodes, parameters.optionR);
 	joinThreads(threads);
@@ -56,9 +64,11 @@ int main(int argc, char *argv[]){
 
 	// print the totals for the graph and reset the static counting variables for the
 	// group of threads.
+	std::cout 	<< "\nMessages Sent: " << ThreadNode::getMessagesSent()
+				<< "\nMessages Received: " << ThreadNode::getMessagesReceived() << std::endl;
 	std::cout 	<< "Graph (" << parameters.filename 
-				<< ") - Total Hops - " << results.hops 
-				<< " - Total Time - " << results.time << " ms\n";
+				<< ") - Total Hops -> " << results.hops 
+				<< " - Total Time -> " << results.time << " ms\n";
 	
 	// analysisFile << filename << ", "
 	// 			<< graph.getNumNodes() << ", "
@@ -114,10 +124,10 @@ void analyzeResults(std::vector<ThreadNode> nodes, analysis &results)
 	// loop for storing the values for the total hopcount and total time
 	// also prints each nodes hopcount and time to completion
 	for(int i = 0; i < nodes.size(); i++){
-		std::pair<unsigned int, double> p = {nodes[i].getHopCount(), nodes[i].getTotalTime()};
-		results.hops += p.first;
-		results.time += p.second;
-		std::cout << "Node (" << i << ") - Hop Count - " << p.first << " - Time - " << p.second << " ms\n";
+		// std::pair<unsigned int, double> p = {nodes[i].getHopCount(), nodes[i].getTotalTime()};
+		results.hops += nodes[i].getHopCount();
+		results.time += nodes[i].getTotalTime();
+		// std::cout << "Node (" << i << ") - Hop Count -> " << nodes[i].getHopCount() << " - Time -> " << nodes[i].getTotalTime() << " ms\n";
 	}
 }
 

@@ -9,13 +9,13 @@
 
 
 #define MAX 1024
-#define COOL 50
+#define COOL 10
 #define EXECUTION_CYCLE 500
 
-#define INIT_PHEROMONE 5.50
-#define INCR_PHEROMONE 1.50
-#define POWER_COEFF 2.24
-#define DILUTION_HALF_LIFE 1000
+#define INIT_PHEROMONE 2.50
+#define INCR_PHEROMONE 5.20
+#define POWER_COEFF 2.13
+#define DILUTION_HALF_LIFE 600
 
 using namespace std::chrono;
 
@@ -31,6 +31,8 @@ class ThreadNode : public Node
 		std::map<uint16_t, double> getEdges() const;
 		std::map<uint16_t, time_point<high_resolution_clock>> getEdgeTimes() const;
 		unsigned int getDuration() const;
+		static int getMessagesSent();
+		static int getMessagesReceived();
 
 	
 		// unsigned int getMaxMsgs() const;

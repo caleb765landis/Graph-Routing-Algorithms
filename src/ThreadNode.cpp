@@ -61,11 +61,6 @@ void ThreadNode::run(std::string algName)
     //
     std::thread reciever(&ThreadNode::thread_recv, this);
 
-    // if(getID() == 0){
-    //     _thread_mtx.lock();
-    //     std::cout << "Sending packets.. \n";
-    //     _thread_mtx.unlock();
-    // }
     // time the sending for each thread based on the _duration till "end"
     while(timer <= end) {
         // the running of each send THREAD needs to be staggered by the EXECUTION_CYCLE time
@@ -376,7 +371,7 @@ void ThreadNode::recordMessage(MessagePacket msg)
 
     // record the messages hops and time
     Node::_total_hops += msg.getHopCount();
-    _total_time += msg.getFinalTimeInterval();
+    Node::_total_time += msg.getFinalTimeInterval();
 
     if(_algorithmType == "ant"){
         incrPheromone(msg.getTransmittor());
@@ -448,4 +443,13 @@ void ThreadNode::printRunInfo() const
         _thread_mtx.unlock();
         // _thread_mtx.unlock();     // <-------- Unlocked
     }
+}
+
+int ThreadNode::getMessagesSent()
+{
+    return _messages_sent;
+}
+int ThreadNode::getMessagesReceived()
+{
+    return _messages_recieved;
 }
