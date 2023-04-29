@@ -61,7 +61,11 @@ void ThreadNode::run(std::string algName)
     //
     std::thread reciever(&ThreadNode::thread_recv, this);
 
-
+    // if(getID() == 0){
+    //     _thread_mtx.lock();
+    //     std::cout << "Sending packets.. \n";
+    //     _thread_mtx.unlock();
+    // }
     // time the sending for each thread based on the _duration till "end"
     while(timer <= end) {
         // the running of each send THREAD needs to be staggered by the EXECUTION_CYCLE time
@@ -104,6 +108,10 @@ void ThreadNode::run(std::string algName)
     // Once all main threads have finished the receive threads could then
     // finish afterwards
     incrMsgRecieved(1);
+
+    if(getID() == 0){
+        printRunInfo();
+    }
 
     if(reciever.joinable())
         reciever.join();
@@ -421,37 +429,23 @@ void ThreadNode::printRunInfo() const
 
 /* Code written by leemes, user: 592323 published by stack overflow
     Ref: https://stackoverflow.com/questions/14539867/how-to-display-a-progress-indicator-in-pure-c-c-cout-printf*/
-    if(getID() == 0){
+    _thread_mtx.lock();
+    float recvProgress = (float)_messages_recieved / _messages_sent;
+    _thread_mtx.unlock();
+
+    int barWidth = 70;
+    while (recvProgress < 1.0) {
+        std::cout   << "Messages Received: [" 
+                    << int(recvProgress * 100.0) << "%]\r";
+        std::cout.clear();
+        std::cout.flush();
+        
+        if(int(recvProgress*100) == 100)
+            std::cout << std::endl; // << "--------------- Progress Done --------------------" << std::endl;
+        
         _thread_mtx.lock();
-        float recvProgress = (float)_messages_recieved / _messages_sent;
+        recvProgress = (float)_messages_recieved / _messages_sent;
         _thread_mtx.unlock();
-
-        int barWidth = 70;
-        // while (recvProgress < 1.0) {
-            std::cout << "Messages Received: [";
-            int pos = barWidth * recvProgress;
-            
-            _thread_mtx.lock();    // <--------- Locked
-            for (int i = 0; i < barWidth; ++i) {
-                if (i < pos) 
-                    std::cout << "=";
-                else if (i == pos) 
-                    std::cout << ">";
-                else 
-                    std::cout << " ";
-            }
-            
-            std::cout << "] " << int(recvProgress * 100.0) << " %\r";
-            //std::cout.clear();
-            std::cout.flush();
-            
-            if(int(recvProgress*100) == 100)
-                std::cout << std::endl; // << "--------------- Progress Done --------------------" << std::endl;
-            
-            _thread_mtx.unlock();     // <-------- Unlocked
-
-
-
-}
-
+        // _thread_mtx.unlock();     // <-------- Unlocked
+    }
 }

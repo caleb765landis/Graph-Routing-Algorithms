@@ -34,14 +34,14 @@ void TimeInterval::chronoStop()
 
 double TimeInterval::GetInterval()
 {
-        double t =(double)(end_time.tv_sec - start_time.tv_sec);
+        double t = (double)(end_time.tv_sec - start_time.tv_sec);
 
         return t;
 }
 
 double TimeInterval::getChronoInterval()
 {
-        duration<double> t = _end_time - _start_time;
+        auto t = duration_cast<milliseconds>(_end_time - _start_time);
 
         return t.count();
 }
